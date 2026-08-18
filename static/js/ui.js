@@ -29,6 +29,12 @@ export function displayNames(nodes, meta) {
   return names;
 }
 
+/** Split "room · suffix" for the card title: room big, suffix small and muted. */
+function splitName(label) {
+  const i = label.indexOf(" · ");
+  return i < 0 ? [label, ""] : [label.slice(0, i), label.slice(i + 3)];
+}
+
 function deviceTags(node, meta, nowMs) {
   const nodeId = node.id;
   const m = (meta.nodes || {})[nodeId] || {};
@@ -126,15 +132,14 @@ export class Rooms {
 
   update(nodes, meta, nowMs) {
     const names = displayNames(nodes, meta);
-    const anyLong = [...names.values()].some((n) => n.length > 18);
     for (const [id, card] of this.cards) if (!nodes.has(id)) { card.el.remove(); this.cards.delete(id); }
     for (const node of nodes.values()) {
       let card = this.cards.get(node.id);
       if (!card) { card = this._create(node); this.cards.set(node.id, card); }
       this.host.appendChild(card.el); // keeps DOM order = model order
       card.el.style.setProperty("--series", node.color);
-      setText(card.name, names.get(node.id));
-      card.name.classList.toggle("long", anyLong); // all titles share one size; step down instead of clipping
+      const [room, suffix] = splitName(names.get(node.id));
+      setHtml(card.name, `${escapeHtml(room)}${suffix ? `<small> · ${escapeHtml(suffix)}</small>` : ""}`);
       setText(card.sub, deviceLine(node.id, meta));
       setHtml(card.tags, deviceTags(node, meta, nowMs).map((t) => `<span class="tag ${t.cls || ""}">${escapeHtml(t.text)}</span>`).join(""));
 

@@ -75,8 +75,8 @@ body { -webkit-font-smoothing: antialiased; }
   display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(0, 1fr); gap: 0.6rem; min-width: 0; overflow: hidden;
 }
 .room > * { min-width: 0; }
-.room .name { font-size: 1.5rem; font-weight: 700; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.6rem; }
-.room .name.long { font-size: 1.15rem; line-height: 1.4; }
+.room .name { font-size: 1.5rem; font-weight: 700; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room .name small { font-family: var(--mono); font-size: 0.8rem; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; }
 .room .meta { display: flex; align-items: center; gap: 0.5rem; min-height: 1.5rem; overflow: hidden; }  /* always exactly one row */
 .room .sub { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.06em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .room .tags { display: flex; flex-wrap: nowrap; gap: 0.35rem; flex: none; }
