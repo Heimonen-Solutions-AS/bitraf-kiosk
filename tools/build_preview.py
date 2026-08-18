@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT))
 from bitraf.db import META_KEY, SensorDB  # noqa: E402
 from bitraf.server import chart_payload  # noqa: E402
 
-MODULE_ORDER = ["config", "format", "sensors", "model", "chart", "ui", "api", "main"]
+MODULE_ORDER = ["config", "format", "sensors", "model", "derived", "chart", "ui", "api", "main"]
 
 
 def bundle_js() -> str:

@@ -3,6 +3,7 @@
 import { CONFIG } from "./config.js";
 import { LiveSource, SnapshotSource } from "./api.js";
 import { $ } from "./format.js";
+import { addDerivedMetrics } from "./derived.js";
 import { Store } from "./model.js";
 import { Banner, Charts, Footer, Header, Rooms } from "./ui.js";
 
@@ -29,6 +30,7 @@ function render() {
   const nowMs = now();
   store.prune(nowMs);
   const nodes = store.model(nowMs);
+  addDerivedMetrics(nodes, store.meta);
   const gapMs = Math.max(store.bucketMs * 3.5, 6 * 60_000); // break lines across missing minutes
   banner.update(nodes, store.meta, store.latestMs, nowMs);
   rooms.update(nodes, store.meta, nowMs);

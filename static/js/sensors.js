@@ -11,6 +11,8 @@ export const SENSOR_TYPES = {
   pm10:        { label: "PM10",        unit: "µg/m³", decimals: 0, good: [0, 20],  fair: [0, 50],   order: 6 },
   radon:       { label: "Radon",       unit: "Bq/m³", decimals: 0, good: [0, 100], fair: [0, 150],  order: 7, advice: "short-term avg" },
   pressure:    { label: "Pressure",    unit: "hPa",   decimals: 0, order: 8 },
+  // derived (see derived.js): excess VOC × occupancy, in ppm
+  flatulence:  { label: "Flatulence",  unit: "ppm",   decimals: 2, good: [0, 0.05], fair: [0, 0.2], order: 9, advice: "open a window" },
 };
 
 export const STATUS_WORD = { ok: "Good", fair: "Fair", poor: "Poor", none: "" };

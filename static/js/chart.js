@@ -62,8 +62,8 @@ export class LineChart {
     const rem = remPx();
     const mono = FONT();
     const font = (px, weight = 400) => `${weight} ${px}px ${mono}`;
-    const padL = 3.4 * rem, padR = 4.6 * rem, padT = 0.7 * rem, padB = 1.6 * rem;
-    const pw = W - padL - padR, ph = H - padT - padB;
+    const padR = 4.6 * rem, padT = 0.7 * rem, padB = 1.6 * rem;
+    const ph = H - padT - padB;
 
     // y extent, pulling in the nearest threshold when it is within reach
     let lo = Infinity, hi = -Infinity;
@@ -78,6 +78,12 @@ export class LineChart {
     const span = hi - lo || Math.abs(hi) * 0.1 || 1;
     lo -= span * 0.12; hi += span * 0.12;
     if (info.fair && info.fair[0] === 0 && lo < 0) lo = 0;
+    // left padding follows the widest tick label so long values (1,007.5) never clip
+    const yTicks = niceTicks(lo, hi, Math.max(2, Math.floor(ph / (2.6 * rem))));
+    ctx.font = font(0.74 * rem);
+    const tickW = Math.max(...yTicks.map((t) => ctx.measureText(fmtNum(t, Number.isInteger(t) ? 0 : 1)).width), 0);
+    const padL = Math.max(2.4 * rem, tickW + 0.9 * rem);
+    const pw = W - padL - padR;
     const X = (t) => padL + ((t - fromMs) / (toMs - fromMs)) * pw;
     const Y = (v) => padT + (1 - (v - lo) / (hi - lo)) * ph;
     this.geom = { X, Y, padL, padR, padT, ph, pw };
@@ -85,7 +91,7 @@ export class LineChart {
     // grid + y ticks
     ctx.lineWidth = 1; ctx.strokeStyle = cssVar("--hair-soft"); ctx.fillStyle = cssVar("--muted");
     ctx.font = font(0.74 * rem); ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for (const t of niceTicks(lo, hi, Math.max(2, Math.floor(ph / (2.6 * rem))))) {
+    for (const t of yTicks) {
       const y = Math.round(Y(t)) + 0.5;
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
       ctx.fillText(fmtNum(t, Number.isInteger(t) ? 0 : 1), padL - 0.5 * rem, y);

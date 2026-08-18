@@ -10,6 +10,22 @@ export function roomName(nodeId, meta) {
   return CONFIG.rooms[nodeId] || m.location || m.description || nodeId;
 }
 
+/** Room names for legends/alerts; when two nodes share a room, append the device so they can be told apart. */
+export function displayNames(nodes, meta) {
+  const names = new Map();
+  const count = new Map();
+  for (const node of nodes.values()) { const n = roomName(node.id, meta); count.set(n, (count.get(n) || 0) + 1); }
+  for (const node of nodes.values()) {
+    const n = roomName(node.id, meta);
+    if (count.get(n) > 1) {
+      const m = (meta.nodes || {})[node.id] || {};
+      const device = m.model || m.manufacturer || m.description || node.id;
+      names.set(node.id, `${n} · ${device}`);
+    } else names.set(node.id, n);
+  }
+  return names;
+}
+
 function deviceTags(node, meta, nowMs) {
   const nodeId = node.id;
   const m = (meta.nodes || {})[nodeId] || {};
@@ -67,6 +83,7 @@ export class Banner {
   constructor() { this.el = $("#banner"); this.lead = $("#bannerLead"); this.items = $("#bannerItems"); }
 
   update(nodes, meta, latestMs, nowMs) {
+    const names = displayNames(nodes, meta);
     const items = [];
     let worst = "ok";
     for (const node of nodes.values()) {
@@ -75,7 +92,7 @@ export class Banner {
         if (STATUS_RANK[s.status] > STATUS_RANK[worst]) worst = s.status;
         const advice = s.status === "poor" && s.info.advice ? ` – ${s.info.advice}` : "";
         items.push({ rank: STATUS_RANK[s.status], html:
-          `<span class="item ${s.status}"><b>${escapeHtml(roomName(node.id, meta))}</b> ${escapeHtml(s.info.label)} ${fmtNum(s.last[1], s.info.decimals)} ${escapeHtml(s.info.unit)}${escapeHtml(advice)}</span>` });
+          `<span class="item ${s.status}"><b>${escapeHtml(names.get(node.id))}</b> ${escapeHtml(s.info.label)} ${fmtNum(s.last[1], s.info.decimals)} ${escapeHtml(s.info.unit)}${escapeHtml(advice)}</span>` });
       }
       if (!node.sensors.size) items.push({ rank: 2, html: `<span class="item stale"><b>${escapeHtml(roomName(node.id, meta))}</b> no data</span>` });
     }
@@ -160,6 +177,7 @@ export class Charts {
   constructor() { this.host = $("#charts"); this.charts = new Map(); }
 
   update(nodes, meta, fromMs, toMs, gapMs) {
+    const names = displayNames(nodes, meta);
     const byType = new Map();
     for (const node of nodes.values()) for (const s of node.sensors.values()) {
       if (!byType.has(s.type)) byType.set(s.type, []);
@@ -176,7 +194,7 @@ export class Charts {
       this.host.appendChild(chart.el);
       chart.update({
         info: entries[0].s.info, fromMs, toMs, gapMs,
-        series: entries.map(({ node, s }) => ({ name: roomName(node.id, meta), color: node.color, values: s.values })),
+        series: entries.map(({ node, s }) => ({ name: names.get(node.id), color: node.color, values: s.values })),
       });
     });
     const cols = getComputedStyle(this.host).gridTemplateColumns.split(" ").length || 2;
