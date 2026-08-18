@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <networks xmlns="urn:ietf:params:xml:ns:yang:ietf-network">
+    <network>
+      <network-id>bitraf</network-id>
+      <node>
+        <node-id>airthings0-ietf-hardware</node-id>
+        <description>Airthings View Plus</description>
+        <netconf-node:data xmlns:netconf-node="urn:tntapi:netconf-node">
+          <netconf-state xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring">
+            <datastores><datastore><name>running</name><locks><global-lock><location>NETCONF</location></global-lock></locks></datastore></datastores>
+          </netconf-state>
+          <hardware xmlns="urn:ietf:params:xml:ns:yang:ietf-hardware">
+            <component>
+              <name>airthings</name>
+              <serial-num>2960178265</serial-num>
+              <mfg-name>Airthings</mfg-name>
+              <model-name>View Plus</model-name>
+            </component>
+            <component>
+              <name>temperature</name>
+              <parent>airthings</parent>
+              <sensor-data>
+                <value>2360</value>
+                <value-type>celsius</value-type>
+                <value-scale>milli</value-scale>
+                <value-timestamp>2026-08-05T12:00:45Z</value-timestamp>
+                <units-display>milli degrees</units-display>
+              </sensor-data>
+            </component>
+            <component>
+              <name>co2</name>
+              <parent>airthings</parent>
+              <sensor-data>
+                <value>485</value>
+                <value-type>other</value-type>
+                <value-scale>units</value-scale>
+                <value-timestamp>2026-08-05T12:00:45Z</value-timestamp>
+                <units-display>CO2 level</units-display>
+              </sensor-data>
+            </component>
+            <component>
+              <name>pressure</name>
+              <parent>airthings</parent>
+              <sensor-data>
+                <value>1004</value>
+                <value-scale>units</value-scale>
+                <units-display>air pressure</units-display>
+              </sensor-data>
+              <name>radon-short-term-average</name>
+              <parent>airthings</parent>
+              <sensor-data>
+                <value>20</value>
+                <value-scale>units</value-scale>
+                <units-display>Radon short term average</units-display>
+              </sensor-data>
+            </component>
+          </hardware>
+        </netconf-node:data>
+      </node>
+      <node>
+        <node-id>sensor-pi0</node-id>
+        <description>217: Raspberry Pi with thermometer</description>
+        <netconf-node:data xmlns:netconf-node="urn:tntapi:netconf-node">
+          <thermometers xmlns="urn:lsi:params:xml:ns:yang:thermometers">
+            <thermometer><name>th0</name><value>2309</value></thermometer>
+          </thermometers>
+        </netconf-node:data>
+        <netconf-node:config xmlns:netconf-node="urn:tntapi:netconf-node">
+          <system xmlns="urn:ietf:params:xml:ns:yang:ietf-system"><location>First floor: 217</location></system>
+        </netconf-node:config>
+      </node>
+      <node>
+        <node-id>airthings1</node-id>
+        <description>no sensors here</description>
+      </node>
+    </network>
+  </networks>
+</config>

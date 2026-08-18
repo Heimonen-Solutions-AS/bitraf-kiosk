@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bitraf indoor climate</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="/static/css/kiosk.css">
+</head>
+<body>
+<main class="kiosk">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow" id="eyebrow"></div>
+      <h1 class="headline" id="headline"></h1>
+    </div>
+    <div class="clock"><span id="clock">--:--</span><small id="date"></small></div>
+  </header>
+
+  <section class="banner" id="banner" aria-live="polite">
+    <div class="lead" id="bannerLead">Loading …</div>
+    <div class="items" id="bannerItems"></div>
+  </section>
+
+  <section class="rooms" id="rooms"></section>
+
+  <section class="charts" id="charts"></section>
+
+  <footer class="foot">
+    <span id="liveText" class="live off">connecting</span>
+    <span id="rangeText"></span>
+    <span class="spacer"></span>
+    <span id="sourceText"></span>
+  </footer>
+</main>
+<!-- Preview builds (tools/build_preview.py) inline a data snapshot here. -->
+<script id="snapshot" type="application/json"></script>
+<script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

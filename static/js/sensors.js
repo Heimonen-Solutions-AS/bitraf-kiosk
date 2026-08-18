@@ -1,0 +1,56 @@
+// Known sensor types: label, unit, decimals and thresholds.
+// good = [lo, hi] is "good", fair = [lo, hi] is "fair", outside fair is "poor".
+// Thresholds follow Airthings' own colour bands for the View Plus.
+export const SENSOR_TYPES = {
+  temperature: { label: "Temperature", unit: "°C",    decimals: 1, good: [18, 25], fair: [15, 28],  hero: true, order: 0 },
+  co2:         { label: "CO₂",         unit: "ppm",   decimals: 0, good: [0, 800], fair: [0, 1000], order: 1, advice: "ventilate" },
+  humidity:    { label: "Humidity",    unit: "%",     decimals: 0, good: [30, 60], fair: [25, 70],  order: 2 },
+  voc:         { label: "VOC",         unit: "ppb",   decimals: 0, good: [0, 250], fair: [0, 2000], order: 3, advice: "ventilate" },
+  pm25:        { label: "PM2.5",       unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 4, advice: "dust/smoke" },
+  pm1:         { label: "PM1",         unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 5 },
+  pm10:        { label: "PM10",        unit: "µg/m³", decimals: 0, good: [0, 20],  fair: [0, 50],   order: 6 },
+  radon:       { label: "Radon",       unit: "Bq/m³", decimals: 0, good: [0, 100], fair: [0, 150],  order: 7, advice: "short-term avg" },
+  pressure:    { label: "Pressure",    unit: "hPa",   decimals: 0, order: 8 },
+};
+
+export const STATUS_WORD = { ok: "Good", fair: "Fair", poor: "Poor", none: "" };
+export const STATUS_RANK = { none: 0, ok: 1, fair: 2, poor: 3 };
+
+/** Sensor name from data.xml → key in SENSOR_TYPES (or the name itself). */
+export function sensorType(sensorName) {
+  const n = sensorName.toLowerCase();
+  if (n.startsWith("radon")) return "radon";
+  if (n.startsWith("temp") || /^th\d*$/.test(n)) return "temperature";
+  if (n === "pm25" || n === "pm2.5" || n === "pm2_5") return "pm25";
+  if (n.startsWith("humid") || n === "rh") return "humidity";
+  if (n.startsWith("press")) return "pressure";
+  return n;
+}
+
+export function statusOf(type, value) {
+  const t = SENSOR_TYPES[type];
+  if (!t || value == null || !t.fair) return "none";
+  if (t.good && value >= t.good[0] && value <= t.good[1]) return "ok";
+  if (value >= t.fair[0] && value <= t.fair[1]) return t.good ? "fair" : "ok";
+  return "poor";
+}
+
+/** Display info for a type; unknown types get label/unit from server metadata. */
+export function typeInfo(type, key, meta) {
+  const known = SENSOR_TYPES[type];
+  if (known) return known;
+  const mm = (meta.metrics || {})[key] || {};
+  const raw = (mm.sensor || type).replace(/[-_]/g, " ");
+  return { label: raw.charAt(0).toUpperCase() + raw.slice(1), unit: mm.unitsDisplay || "", decimals: 1, order: 50 };
+}
+
+/** Threshold lines for a chart: [{value, kind}] where kind is "fair" or "poor". */
+export function thresholdsFor(info) {
+  if (!info.fair) return [];
+  const out = [];
+  if (info.good && info.good[0] > info.fair[0]) out.push({ value: info.good[0], kind: "fair" });
+  if (info.good && Number.isFinite(info.good[1]) && info.good[1] < info.fair[1]) out.push({ value: info.good[1], kind: "fair" });
+  if (Number.isFinite(info.fair[1]) && info.fair[1] > 0) out.push({ value: info.fair[1], kind: "poor" });
+  if (info.fair[0] > 0) out.push({ value: info.fair[0], kind: "poor" });
+  return out;
+}

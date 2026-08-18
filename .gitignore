@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+preview.html
+airthings0-full.xml
+*.get-schema.xml

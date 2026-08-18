@@ -1,0 +1,45 @@
+module lsi-storage-drive-ext {
+  yang-version 1.1;
+  namespace "urn:lsi:params:xml:ns:yang:storage-drive-ext";
+  prefix sde;
+
+  import ietf-hardware-state {
+    prefix hw;
+  }
+
+  import iana-hardware {
+    prefix ianahw;
+  }
+
+  augment "/hw:hardware/hw:component" {
+    when "derived-from-or-self(hw:class, 'ianahw:storage-drive')";
+    description
+      "Augments ietf-hardware with specific lsi storage drive details.";
+
+    container storage-drive {
+      description
+        "lsi-specific operational data for storage drives.";
+
+      leaf mount-point {
+        type string;
+      }
+      leaf size {
+        type uint64;
+      }
+      leaf utilized {
+        type uint64;
+      }
+      leaf available {
+        type uint64;
+      }
+
+      leaf wear-level-percentage {
+        type uint8 {
+          range "0..100";
+        }
+        description
+          "Percentage of drive life used.";
+      }
+    }
+  }
+}
