@@ -33,13 +33,19 @@ function deviceTags(node, meta, nowMs) {
   const tags = [];
   // One row only: the node's own description (hand-written upstream), falling back to
   // manufacturer + model from ietf-hardware, then warnings. Node-id is left out.
-  const device = m.description || [m.manufacturer, m.model].filter(Boolean).join(" ");
-  if (device && device !== name) tags.push({ text: device });
   if (!m.location && !CONFIG.rooms[nodeId]) tags.push({ text: "location not set", cls: "warn" });
   if (node.lastSeen != null && nowMs - node.lastSeen > CONFIG.nodeQuietMin * 60_000) {
     tags.push({ text: `last seen ${fmtTime(node.lastSeen)} · ${fmtAgo(nowMs - node.lastSeen)}`, cls: "quiet" });
   }
   return tags;
+}
+
+/** Quiet subtitle under the room name: the node's description, else manufacturer + model. */
+function deviceLine(nodeId, meta) {
+  const m = (meta.nodes || {})[nodeId] || {};
+  const name = roomName(nodeId, meta);
+  const line = m.description || [m.manufacturer, m.model].filter(Boolean).join(" ");
+  return line && line !== name ? line : "";
 }
 
 function fmtAgo(ms) {
@@ -123,6 +129,7 @@ export class Rooms {
       this.host.appendChild(card.el); // keeps DOM order = model order
       card.el.style.setProperty("--series", node.color);
       setText(card.name, roomName(node.id, meta));
+      setText(card.sub, deviceLine(node.id, meta));
       setHtml(card.tags, deviceTags(node, meta, nowMs).map((t) => `<span class="tag ${t.cls || ""}">${escapeHtml(t.text)}</span>`).join(""));
 
       const sensors = [...node.sensors.values()].sort((a, b) => a.info.order - b.info.order);
@@ -161,11 +168,11 @@ export class Rooms {
 
   _create(node) {
     const root = el("article", "room");
-    root.innerHTML = `<div class="name"></div><div class="tags"></div>
+    root.innerHTML = `<div class="name"></div><div class="meta"><span class="sub"></span><span class="tags"></span></div>
       <div class="hero"><span class="v"></span><span class="u"></span><span class="st"></span></div>
       <div class="stats"></div><div class="empty" hidden>No samples in the last ${CONFIG.windowHours} h</div>`;
     return {
-      el: root, name: root.querySelector(".name"), tags: root.querySelector(".tags"),
+      el: root, name: root.querySelector(".name"), sub: root.querySelector(".sub"), tags: root.querySelector(".tags"),
       hero: root.querySelector(".hero"), heroV: root.querySelector(".hero .v"), heroU: root.querySelector(".hero .u"),
       heroS: root.querySelector(".hero .st"), statsEl: root.querySelector(".stats"), stats: new Map(),
       empty: root.querySelector(".empty"),
