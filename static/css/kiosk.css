@@ -76,7 +76,7 @@ body { -webkit-font-smoothing: antialiased; }
 }
 .room > * { min-width: 0; }
 .room .name { font-size: 1.5rem; font-weight: 700; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.room .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.room .tags { display: flex; flex-wrap: nowrap; gap: 0.35rem; overflow: hidden; min-height: 1.5rem; }  /* always exactly one row */
 .tag { background: var(--ground); color: var(--snow); font-family: var(--mono); font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 5px; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .tag.warn { background: transparent; color: var(--muted); border: 1px solid var(--hair); }
 .tag.quiet { background: var(--critical); color: var(--snow); }
