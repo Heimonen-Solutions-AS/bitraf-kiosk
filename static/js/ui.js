@@ -31,9 +31,9 @@ function deviceTags(node, meta, nowMs) {
   const m = (meta.nodes || {})[nodeId] || {};
   const name = roomName(nodeId, meta);
   const tags = [];
-  // One row only: the device as reported by the node, then warnings.
-  // Node-id and description are deliberately left out (not important on the wall).
-  const device = [m.manufacturer, m.model].filter(Boolean).join(" ");
+  // One row only: the node's own description (hand-written upstream), falling back to
+  // manufacturer + model from ietf-hardware, then warnings. Node-id is left out.
+  const device = m.description || [m.manufacturer, m.model].filter(Boolean).join(" ");
   if (device && device !== name) tags.push({ text: device });
   if (!m.location && !CONFIG.rooms[nodeId]) tags.push({ text: "location not set", cls: "warn" });
   if (node.lastSeen != null && nowMs - node.lastSeen > CONFIG.nodeQuietMin * 60_000) {
