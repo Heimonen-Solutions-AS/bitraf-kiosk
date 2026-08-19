@@ -165,8 +165,22 @@ class Poller:
         return self.parse_url(self.discover_latest_url())
 
     def _store_metadata(self, parsed: ParseResult) -> None:
+        """Merge the newest snapshot's metadata over what we already know.
+
+        Nodes and metrics absent from the newest data.xml (offline, mid-reconfig)
+        keep their last-known entries, so names stay stable while a device is quiet.
+        """
         try:
-            self.db.set_meta(META_KEY, {**parsed.metadata, "updatedAt": int(time.time() * 1000)})
+            merged = dict(self.db.get_meta(META_KEY) or {})
+            for section in ("nodes", "metrics"):
+                known = dict(merged.get(section) or {})
+                known.update(parsed.metadata.get(section) or {})
+                merged[section] = known
+            for key, value in parsed.metadata.items():
+                if key not in ("nodes", "metrics"):
+                    merged[key] = value
+            merged["updatedAt"] = int(time.time() * 1000)
+            self.db.set_meta(META_KEY, merged)
         except Exception as exc:  # noqa: BLE001
             log.warning("could not store metadata: %s", exc)
 
