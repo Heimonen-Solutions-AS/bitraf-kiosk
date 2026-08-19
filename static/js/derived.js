@@ -1,5 +1,6 @@
 // Derived (computed) metrics — added to each node's sensor map after the raw
 // series are built, so they get cards, charts, thresholds and alerts for free.
+import { CONFIG } from "./config.js";
 import { statusOf, typeInfo } from "./sensors.js";
 
 /**
@@ -38,7 +39,10 @@ export function flatulenceSeries(voc, co2, humidity) {
 
 /** Mutates `nodes` (Map from Store.model) adding derived sensors where inputs exist. */
 export function addDerivedMetrics(nodes, meta) {
+  const excluded = new Set((CONFIG.flatulenceExclude || []).map((s) => s.toLowerCase()));
   for (const node of nodes.values()) {
+    const location = ((meta.nodes || {})[node.id] || {}).location || "";
+    if (excluded.has(node.id.toLowerCase()) || excluded.has(location.toLowerCase())) continue;
     const voc = node.sensors.get("voc"), co2 = node.sensors.get("co2");
     if (!voc || !co2) continue;
     const values = flatulenceSeries(voc, co2, node.sensors.get("humidity"));
