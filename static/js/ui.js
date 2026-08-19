@@ -193,13 +193,10 @@ export class Rooms {
         }
         card.statsEl.appendChild(row.el);
         setText(row.l, s.info.label);
-        // Rating enums (e.g. Alpstuga air quality) show only their word in the status
-        // pill — "Moderate", "Very poor" — coloured by the mapped good/fair/poor status.
-        const word = valueWord(s.info, s.last[1]);
-        const value = word ? "" : fmtNum(s.last[1], s.info.decimals);
+        const value = fmtNum(s.last[1], s.info.decimals);
         if (row.v.firstChild?.nodeValue !== value) { row.v.innerHTML = `${escapeHtml(value)}<small>${escapeHtml(s.info.unit)}</small>`; setValue(row.v, row.v.textContent); }
         setClass(row.st, `st ${s.status}`);
-        setText(row.st, word || `${STATUS_WORD[s.status]} ${trendArrow(s)}`.trim());
+        setText(row.st, `${STATUS_WORD[s.status]} ${trendArrow(s)}`.trim());
       }
       for (const [type, row] of card.stats) if (!seen.has(type)) { row.el.remove(); card.stats.delete(type); }
       card.empty.hidden = !!(hero || rest.length);
