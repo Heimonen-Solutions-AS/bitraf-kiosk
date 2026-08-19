@@ -123,15 +123,54 @@ export class Banner {
 }
 
 export class Rooms {
-  constructor() { this.host = $("#rooms"); this.cards = new Map(); }
+  constructor() {
+    this.host = $("#rooms"); this.cards = new Map();
+    this.nav = el("div", "rooms-nav"); this.host.after(this.nav);
+    this.offset = 0; this.timer = null; this.last = null;
+  }
+
+  /** Which node ids are visible right now: all of them, or a wrapping window of maxRoomCards. */
+  _visibleIds(ids) {
+    const max = CONFIG.maxRoomCards;
+    if (ids.length <= max) return ids;
+    this.offset %= ids.length;
+    return Array.from({ length: max }, (_, i) => ids[(this.offset + i) % ids.length]);
+  }
+
+  _advance() {
+    if (!this.last) return;
+    const ids = [...this.last.nodes.keys()];
+    if (ids.length <= CONFIG.maxRoomCards) return;
+    this.host.classList.add("fading");
+    setTimeout(() => {
+      this.offset = (this.offset + CONFIG.maxRoomCards) % ids.length;
+      this.update(this.last.nodes, this.last.meta, this.last.nowMs);
+      this.host.classList.remove("fading");
+    }, CONFIG.roomFadeMs);
+  }
+
+  _renderNav(ids, visible) {
+    if (ids.length <= CONFIG.maxRoomCards) { setHtml(this.nav, ""); return; }
+    const shown = new Set(visible);
+    setHtml(this.nav, ids.map((id) => `<i class="${shown.has(id) ? "on" : ""}"></i>`).join(""));
+  }
 
   update(nodes, meta, nowMs) {
+    this.last = { nodes, meta, nowMs };
+    const ids = [...nodes.keys()];
+    const rotating = ids.length > CONFIG.maxRoomCards;
+    if (rotating && !this.timer) this.timer = setInterval(() => this._advance(), CONFIG.roomRotateMs);
+    if (!rotating && this.timer) { clearInterval(this.timer); this.timer = null; this.offset = 0; }
+    const visible = this._visibleIds(ids);
+    this._renderNav(ids, visible);
+
     const names = displayNames(nodes, meta);
     for (const [id, card] of this.cards) if (!nodes.has(id)) { card.el.remove(); this.cards.delete(id); }
-    for (const node of nodes.values()) {
+    for (const id of visible) {
+      const node = nodes.get(id);
       let card = this.cards.get(node.id);
       if (!card) { card = this._create(node); this.cards.set(node.id, card); }
-      this.host.appendChild(card.el); // keeps DOM order = model order
+      this.host.appendChild(card.el); // keeps DOM order = window order
       card.el.style.setProperty("--series", node.color);
       const [room, suffix] = splitName(names.get(node.id));
       setHtml(card.name, `${escapeHtml(room)}${suffix ? `<small> · ${escapeHtml(suffix)}</small>` : ""}`);
@@ -169,6 +208,7 @@ export class Rooms {
       for (const [type, row] of card.stats) if (!seen.has(type)) { row.el.remove(); card.stats.delete(type); }
       card.empty.hidden = !!(hero || rest.length);
     }
+    for (const [id, card] of this.cards) if (!visible.includes(id) && card.el.parentNode) card.el.remove();
   }
 
   _create(node) {

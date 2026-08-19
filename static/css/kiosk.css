@@ -33,7 +33,7 @@ body { -webkit-font-smoothing: antialiased; }
 
 .kiosk {
   height: 100vh; width: 100vw; padding: var(--inset-y) var(--inset-x);
-  display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; gap: 1.1rem;
+  display: grid; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto; gap: 1.1rem;
 }
 
 /* ---------- header ---------- */
@@ -68,7 +68,13 @@ body { -webkit-font-smoothing: antialiased; }
 .banner.error { border-color: var(--critical); background: #1a1a19; color: var(--snow); }
 
 /* ---------- room cards ---------- */
-.rooms { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1rem; }
+.rooms { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1rem; transition: opacity 0.45s ease; }
+.rooms.fading { opacity: 0; }
+/* dots under the cards, only rendered when more nodes exist than cards fit */
+.rooms-nav { display: flex; justify-content: center; gap: 0.45rem; margin-top: -0.55rem; }
+.rooms-nav:empty { display: none; }
+.rooms-nav i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--hair); display: inline-block; transition: background 0.3s; }
+.rooms-nav i.on { background: var(--snow); }
 .room {
   background: var(--snow); color: var(--ink-on-snow); border-radius: 5px; padding: 1rem 1.2rem 0.9rem;
   border-left: 5px solid var(--series); border-right: 5px solid transparent;
