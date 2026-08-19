@@ -9,8 +9,8 @@ export const CONFIG = {
   nodeQuietMin: 30,       // room card: show "last seen" when a device has not reported for this long
   infoLink: "wiki.bitraf.no/wiki/Sensornettverk", // shown in the footer
   maxRoomCards: 3,        // more nodes than this → the cards rotate in a sliding window
-  roomRotateMs: 12_000,   // how long each window of cards is shown
-  roomFadeMs: 450,        // crossfade duration when the window advances
+  roomRotateMs: 30_000,   // how long each window of cards is shown
+  roomFadeMs: 700,        // crossfade duration when the window advances
   locale: "en-GB",
   eyebrow: "Bitraf · Indoor climate — Oslo, Norway",
   headline: "Air quality now",

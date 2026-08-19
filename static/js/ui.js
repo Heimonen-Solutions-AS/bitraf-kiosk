@@ -125,7 +125,6 @@ export class Banner {
 export class Rooms {
   constructor() {
     this.host = $("#rooms"); this.cards = new Map();
-    this.nav = el("div", "rooms-nav"); this.host.after(this.nav);
     this.offset = 0; this.timer = null; this.last = null;
   }
 
@@ -149,12 +148,6 @@ export class Rooms {
     }, CONFIG.roomFadeMs);
   }
 
-  _renderNav(ids, visible) {
-    if (ids.length <= CONFIG.maxRoomCards) { setHtml(this.nav, ""); return; }
-    const shown = new Set(visible);
-    setHtml(this.nav, ids.map((id) => `<i class="${shown.has(id) ? "on" : ""}"></i>`).join(""));
-  }
-
   update(nodes, meta, nowMs) {
     this.last = { nodes, meta, nowMs };
     const ids = [...nodes.keys()];
@@ -162,7 +155,6 @@ export class Rooms {
     if (rotating && !this.timer) this.timer = setInterval(() => this._advance(), CONFIG.roomRotateMs);
     if (!rotating && this.timer) { clearInterval(this.timer); this.timer = null; this.offset = 0; }
     const visible = this._visibleIds(ids);
-    this._renderNav(ids, visible);
 
     const names = displayNames(nodes, meta);
     for (const [id, card] of this.cards) if (!nodes.has(id)) { card.el.remove(); this.cards.delete(id); }
