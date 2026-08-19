@@ -15,7 +15,7 @@
   --critical:   #d03b3b;
   --stale:      #838381;
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --s5: #d55181; --s6: #00b3c7; --s7: #9085e9; --s8: #e66767;
   --sans: 'Roboto', system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   /* One rem follows the smaller screen axis so the whole board always fits:
