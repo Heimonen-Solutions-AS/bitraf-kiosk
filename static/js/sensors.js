@@ -13,6 +13,10 @@ export const SENSOR_TYPES = {
   pressure:    { label: "Pressure",    unit: "hPa",   decimals: 0, order: 8 },
   // derived (see derived.js): excess VOC × occupancy, in ppm
   flatulence:  { label: "Flatulence",  unit: "ppm",   decimals: 2, good: [0, 0.05], fair: [0, 0.2], order: 9, advice: "open a window" },
+  // device-reported overall rating (e.g. IKEA Alpstuga's AirQualityEnum,
+  // 0=unknown 1=good … 6=extremely poor): shown as a word on the card, never charted
+  airquality:  { label: "Air quality", unit: "", decimals: 0, order: 10, noChart: true,
+                 enumWords: ["Unknown", "Good", "Fair", "Moderate", "Poor", "Very poor", "Extremely poor"] },
 };
 
 export const STATUS_WORD = { ok: "Good", fair: "Fair", poor: "Poor", none: "" };
@@ -26,11 +30,24 @@ export function sensorType(sensorName) {
   if (n === "pm25" || n === "pm2.5" || n === "pm2_5") return "pm25";
   if (n.startsWith("humid") || n === "rh") return "humidity";
   if (n.startsWith("press")) return "pressure";
+  if (n.replace(/[-_ ]/g, "").endsWith("airquality")) return "airquality";
   return n;
+}
+
+/** Display text for a sensor value: the enum word for rating types, a number otherwise. */
+export function valueWord(info, value) {
+  if (!info.enumWords || value == null) return null;
+  return info.enumWords[Math.round(value)] ?? String(value);
 }
 
 export function statusOf(type, value) {
   const t = SENSOR_TYPES[type];
+  if (t && t.enumWords) {
+    const v = value == null ? 0 : Math.round(value);
+    if (v === 1) return "ok";
+    if (v === 2 || v === 3) return "fair";
+    return v >= 4 ? "poor" : "none";
+  }
   if (!t || value == null || !t.fair) return "none";
   if (t.good && value >= t.good[0] && value <= t.good[1]) return "ok";
   if (value >= t.fair[0] && value <= t.fair[1]) return t.good ? "fair" : "ok";

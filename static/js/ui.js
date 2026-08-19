@@ -3,7 +3,7 @@
 import { CONFIG } from "./config.js";
 import { LineChart } from "./chart.js";
 import { $, el, escapeHtml, fmtDate, fmtNum, fmtTime, setClass, setHtml, setText } from "./format.js";
-import { STATUS_RANK, STATUS_WORD } from "./sensors.js";
+import { STATUS_RANK, STATUS_WORD, valueWord } from "./sensors.js";
 
 export function roomName(nodeId, meta) {
   const m = (meta.nodes || {})[nodeId] || {};
@@ -101,8 +101,9 @@ export class Banner {
         if (s.status !== "poor" && s.status !== "fair") continue;
         if (STATUS_RANK[s.status] > STATUS_RANK[worst]) worst = s.status;
         const advice = s.status === "poor" && s.info.advice ? ` – ${s.info.advice}` : "";
+        const value = valueWord(s.info, s.last[1]) ?? `${fmtNum(s.last[1], s.info.decimals)} ${s.info.unit}`;
         items.push({ rank: STATUS_RANK[s.status], html:
-          `<span class="item ${s.status}"><b>${escapeHtml(names.get(node.id))}</b> ${escapeHtml(s.info.label)} ${fmtNum(s.last[1], s.info.decimals)} ${escapeHtml(s.info.unit)}${escapeHtml(advice)}</span>` });
+          `<span class="item ${s.status}"><b>${escapeHtml(names.get(node.id))}</b> ${escapeHtml(s.info.label)} ${escapeHtml(value)}${escapeHtml(advice)}</span>` });
       }
       if (!node.sensors.size) items.push({ rank: 2, html: `<span class="item stale"><b>${escapeHtml(roomName(node.id, meta))}</b> no data</span>` });
     }
@@ -192,10 +193,13 @@ export class Rooms {
         }
         card.statsEl.appendChild(row.el);
         setText(row.l, s.info.label);
-        const value = fmtNum(s.last[1], s.info.decimals);
+        // Rating enums (e.g. Alpstuga air quality) show only their word in the status
+        // pill — "Moderate", "Very poor" — coloured by the mapped good/fair/poor status.
+        const word = valueWord(s.info, s.last[1]);
+        const value = word ? "" : fmtNum(s.last[1], s.info.decimals);
         if (row.v.firstChild?.nodeValue !== value) { row.v.innerHTML = `${escapeHtml(value)}<small>${escapeHtml(s.info.unit)}</small>`; setValue(row.v, row.v.textContent); }
         setClass(row.st, `st ${s.status}`);
-        setText(row.st, `${STATUS_WORD[s.status]} ${trendArrow(s)}`.trim());
+        setText(row.st, word || `${STATUS_WORD[s.status]} ${trendArrow(s)}`.trim());
       }
       for (const [type, row] of card.stats) if (!seen.has(type)) { row.el.remove(); card.stats.delete(type); }
       card.empty.hidden = !!(hero || rest.length);
@@ -224,6 +228,7 @@ export class Charts {
     const names = displayNames(nodes, meta);
     const byType = new Map();
     for (const node of nodes.values()) for (const s of node.sensors.values()) {
+      if (s.info.noChart) continue; // rating enums live on the cards, not in the grid
       if (!byType.has(s.type)) byType.set(s.type, []);
       byType.get(s.type).push({ node, s });
     }
