@@ -221,9 +221,8 @@ export class Rooms {
 }
 
 /**
- * One legend for all charts: a chip per device in node order. Chips whose card is
- * showing right now are lit (and numbered in card order, left to right); the rest are
- * dimmed, exactly like their lines in the charts.
+ * One legend for all charts: a stationary chip per device, in the order the cards
+ * rotate through. Only which chips are lit changes: lit = its card is showing now.
  */
 export class Legend {
   constructor() { this.host = $("#legend"); this.chips = new Map(); this.active = []; }
@@ -234,10 +233,7 @@ export class Legend {
   }
 
   _mark(id, chip) {
-    const pos = this.active.indexOf(id);
-    const lit = pos >= 0;
-    setClass(chip.el, `chip ${lit ? "lit" : "dim"}`);
-    setText(chip.pos, lit ? String(pos + 1) : "");
+    setClass(chip.el, `chip ${this.active.includes(id) ? "lit" : "dim"}`);
   }
 
   update(nodes, meta) {
@@ -247,11 +243,11 @@ export class Legend {
       let chip = this.chips.get(node.id);
       if (!chip) {
         const root = el("span", "chip");
-        root.innerHTML = `<i><b></b></i><span class="n"></span>`;
-        chip = { el: root, pos: root.querySelector("b"), name: root.querySelector(".n") };
+        root.innerHTML = `<i></i><span class="n"></span>`;
+        chip = { el: root, name: root.querySelector(".n") };
         this.chips.set(node.id, chip);
       }
-      this.host.appendChild(chip.el); // DOM order = node order
+      this.host.appendChild(chip.el); // DOM order = node order = rotation order, never reordered
       chip.el.style.setProperty("--c", node.color);
       setText(chip.name, names.get(node.id));
       this._mark(node.id, chip);

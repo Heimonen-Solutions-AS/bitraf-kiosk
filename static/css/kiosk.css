@@ -113,9 +113,8 @@ body { -webkit-font-smoothing: antialiased; }
 .chip { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.78rem; white-space: nowrap;
         padding: 0.3rem 0.7rem 0.3rem 0.45rem; border-radius: 5px; border: 1px solid var(--hair-soft); color: var(--muted); max-width: 100%;
         transition: color 0.7s ease, border-color 0.7s ease, background 0.7s ease; }
-.chip i { width: 1.2rem; height: 1.2rem; border-radius: 5px; background: var(--c); display: inline-flex; align-items: center; justify-content: center;
-          flex: none; opacity: 0.35; transition: opacity 0.7s ease; }
-.chip i b { font-size: 0.72rem; font-weight: 700; color: var(--ground); line-height: 1; }
+.chip i { width: 1.1rem; height: 0.3rem; border-radius: 2px; background: var(--c); display: inline-block;
+          flex: none; opacity: 0.5; transition: opacity 0.7s ease; }
 .chip .n { overflow: hidden; text-overflow: ellipsis; }
 .chip.lit { color: var(--snow); border-color: var(--c); background: rgba(255, 250, 250, 0.04); }
 .chip.lit i { opacity: 1; }

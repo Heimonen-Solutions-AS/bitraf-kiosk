@@ -37,7 +37,7 @@ export class LineChart {
 
   setIndex(index) { this.numEl.textContent = String(index + 1).padStart(2, "0"); }
 
-  /** series: [{name, color, values:[[t,v]...], active}] — inactive series are drawn dimmed, under the active ones */
+  /** series: [{name, color, values:[[t,v]...], active}] — active series are drawn last, thicker and haloed */
   update({ info, series, fromMs, toMs, gapMs }) {
     this.info = info; this.series = series; this.fromMs = fromMs; this.toMs = toMs; this.gapMs = gapMs;
     if (this.titleEl.textContent !== info.label) this.titleEl.textContent = info.label;
@@ -113,12 +113,12 @@ export class LineChart {
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke(); ctx.globalAlpha = 1;
     }
 
-    // series: dimmed (inactive) first, highlighted (active) on top
+    // series: everything at the normal 2 px; the active ones (cards showing) are drawn
+    // last, on top, a little thicker and with a soft halo — nothing else is weakened
     const ends = [];
     const ordered = [...series.filter((s) => !s.active), ...series.filter((s) => s.active)];
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
     for (const s of ordered) {
-      ctx.globalAlpha = s.active ? 1 : CONFIG.dimAlpha;
-      ctx.strokeStyle = s.color; ctx.lineWidth = s.active ? 2.4 : CONFIG.dimWidth; ctx.lineJoin = "round"; ctx.lineCap = "round";
       ctx.beginPath();
       let prevT = null;
       for (const [t, v] of s.values) {
@@ -126,26 +126,25 @@ export class LineChart {
         if (prevT == null || t - prevT > this.gapMs) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         prevT = t;
       }
+      ctx.strokeStyle = s.color;
+      if (s.active && CONFIG.highlightHalo > 0) {
+        ctx.globalAlpha = CONFIG.highlightHalo; ctx.lineWidth = CONFIG.highlightWidth + 5; ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      ctx.lineWidth = s.active ? CONFIG.highlightWidth : 2;
       ctx.stroke();
       const [lt, lv] = s.values[s.values.length - 1];
       ends.push({ s, x: X(lt), y: Y(lv), v: lv });
     }
-    ctx.globalAlpha = 1;
-    // end marker (2px ring in the ground colour) for every series; end labels only for
-    // active ones, where they fit (inactive series keep a small dimmed dot)
+    // end marker (2px ring in the ground colour) + end label where it fits; active
+    // series get a slightly larger marker and a bold label
     ends.sort((a, b) => a.y - b.y);
     let lastLabelY = -Infinity;
     for (const e of ends) {
-      if (!e.s.active) {
-        ctx.globalAlpha = CONFIG.dimAlpha;
-        ctx.beginPath(); ctx.arc(e.x, e.y, 2.5, 0, Math.PI * 2); ctx.fillStyle = e.s.color; ctx.fill();
-        ctx.globalAlpha = 1;
-        continue;
-      }
-      ctx.beginPath(); ctx.arc(e.x, e.y, 5, 0, Math.PI * 2); ctx.fillStyle = cssVar("--ground"); ctx.fill();
-      ctx.beginPath(); ctx.arc(e.x, e.y, 4, 0, Math.PI * 2); ctx.fillStyle = e.s.color; ctx.fill();
+      const r = e.s.active ? 5 : 4;
+      ctx.beginPath(); ctx.arc(e.x, e.y, r + 1, 0, Math.PI * 2); ctx.fillStyle = cssVar("--ground"); ctx.fill();
+      ctx.beginPath(); ctx.arc(e.x, e.y, r, 0, Math.PI * 2); ctx.fillStyle = e.s.color; ctx.fill();
       if (e.y - lastLabelY >= 1.15 * rem) {
-        ctx.fillStyle = cssVar("--snow"); ctx.font = font(0.85 * rem, 700); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillStyle = cssVar("--snow"); ctx.font = font(0.85 * rem, e.s.active ? 700 : 400); ctx.textAlign = "left"; ctx.textBaseline = "middle";
         ctx.fillText(fmtNum(e.v, info.decimals), e.x + 0.65 * rem, e.y);
         lastLabelY = e.y;
       }

@@ -11,9 +11,10 @@ export const CONFIG = {
   maxRoomCards: 3,        // more nodes than this → the cards rotate in a sliding window
   roomRotateMs: 30_000,   // how long each window of cards is shown
   roomFadeMs: 700,        // crossfade duration when the window advances
-  // Chart lines of devices whose card is not showing right now: opacity and width.
-  dimAlpha: 0.28,
-  dimWidth: 1.5,
+  // Chart lines of the devices whose cards are showing: drawn on top, thicker, with a
+  // soft halo. Everything else keeps the normal 2 px rendering.
+  highlightWidth: 2.6,
+  highlightHalo: 0.18,    // halo opacity (0 = off)
   locale: "en-GB",
   eyebrow: "Bitraf · Indoor climate — Oslo, Norway",
   headline: "Air quality now",
