@@ -136,14 +136,20 @@ export class LineChart {
       const [lt, lv] = s.values[s.values.length - 1];
       ends.push({ s, x: X(lt), y: Y(lv), v: lv });
     }
-    // end marker (2px ring in the ground colour) + end label where it fits; active
-    // series get a slightly larger marker and a bold label
+    // end marker + end label where it fits: a round dot for every series, a diamond
+    // (and a bold label) for the ones whose card is showing
+    const marker = (x, y, r, diamond) => {
+      ctx.beginPath();
+      if (diamond) { ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
+      else ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    };
     ends.sort((a, b) => a.y - b.y);
     let lastLabelY = -Infinity;
     for (const e of ends) {
-      const r = e.s.active ? 5 : 4;
-      ctx.beginPath(); ctx.arc(e.x, e.y, r + 1, 0, Math.PI * 2); ctx.fillStyle = cssVar("--ground"); ctx.fill();
-      ctx.beginPath(); ctx.arc(e.x, e.y, r, 0, Math.PI * 2); ctx.fillStyle = e.s.color; ctx.fill();
+      const r = e.s.active ? 6 : 4;
+      ctx.fillStyle = cssVar("--ground"); marker(e.x, e.y, r + 1.5, e.s.active);
+      ctx.fillStyle = e.s.color; marker(e.x, e.y, r, e.s.active);
       if (e.y - lastLabelY >= 1.15 * rem) {
         ctx.fillStyle = cssVar("--snow"); ctx.font = font(0.85 * rem, e.s.active ? 700 : 400); ctx.textAlign = "left"; ctx.textBaseline = "middle";
         ctx.fillText(fmtNum(e.v, info.decimals), e.x + 0.65 * rem, e.y);
