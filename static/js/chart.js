@@ -20,14 +20,13 @@ export class LineChart {
   constructor(type, index) {
     this.type = type;
     this.el = el("article", "chart");
-    this.el.innerHTML = `<div class="head"><span class="num"></span><span class="title"></span><span class="unit"></span><span class="legend"></span></div>
+    this.el.innerHTML = `<div class="head"><span class="num"></span><span class="title"></span><span class="unit"></span></div>
       <div class="plot"><canvas></canvas><div class="tip"></div></div>`;
     this.canvas = this.el.querySelector("canvas");
     this.tip = this.el.querySelector(".tip");
     this.numEl = this.el.querySelector(".num");
     this.titleEl = this.el.querySelector(".title");
     this.unitEl = this.el.querySelector(".unit");
-    this.legendEl = this.el.querySelector(".legend");
     this.series = []; this.info = {}; this.fromMs = 0; this.toMs = 1; this.gapMs = 6 * 60_000;
     this.setIndex(index);
     const plot = this.el.querySelector(".plot");
@@ -38,13 +37,11 @@ export class LineChart {
 
   setIndex(index) { this.numEl.textContent = String(index + 1).padStart(2, "0"); }
 
-  /** series: [{name, color, values:[[t,v]...]}] */
+  /** series: [{name, color, values:[[t,v]...], active}] — inactive series are drawn dimmed, under the active ones */
   update({ info, series, fromMs, toMs, gapMs }) {
     this.info = info; this.series = series; this.fromMs = fromMs; this.toMs = toMs; this.gapMs = gapMs;
     if (this.titleEl.textContent !== info.label) this.titleEl.textContent = info.label;
     if (this.unitEl.textContent !== info.unit) this.unitEl.textContent = info.unit;
-    const legendHtml = series.map((s) => `<span><i style="--c:${s.color}"></i>${escapeHtml(s.name)}</span>`).join("");
-    if (this.legendEl.innerHTML !== legendHtml) this.legendEl.innerHTML = legendHtml;
     this.draw();
   }
 
@@ -116,10 +113,12 @@ export class LineChart {
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke(); ctx.globalAlpha = 1;
     }
 
-    // series
+    // series: dimmed (inactive) first, highlighted (active) on top
     const ends = [];
-    for (const s of series) {
-      ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.lineCap = "round";
+    const ordered = [...series.filter((s) => !s.active), ...series.filter((s) => s.active)];
+    for (const s of ordered) {
+      ctx.globalAlpha = s.active ? 1 : CONFIG.dimAlpha;
+      ctx.strokeStyle = s.color; ctx.lineWidth = s.active ? 2.4 : CONFIG.dimWidth; ctx.lineJoin = "round"; ctx.lineCap = "round";
       ctx.beginPath();
       let prevT = null;
       for (const [t, v] of s.values) {
@@ -131,10 +130,18 @@ export class LineChart {
       const [lt, lv] = s.values[s.values.length - 1];
       ends.push({ s, x: X(lt), y: Y(lv), v: lv });
     }
-    // end marker (2px ring in the ground colour) + end label where it fits
+    ctx.globalAlpha = 1;
+    // end marker (2px ring in the ground colour) for every series; end labels only for
+    // active ones, where they fit (inactive series keep a small dimmed dot)
     ends.sort((a, b) => a.y - b.y);
     let lastLabelY = -Infinity;
     for (const e of ends) {
+      if (!e.s.active) {
+        ctx.globalAlpha = CONFIG.dimAlpha;
+        ctx.beginPath(); ctx.arc(e.x, e.y, 2.5, 0, Math.PI * 2); ctx.fillStyle = e.s.color; ctx.fill();
+        ctx.globalAlpha = 1;
+        continue;
+      }
       ctx.beginPath(); ctx.arc(e.x, e.y, 5, 0, Math.PI * 2); ctx.fillStyle = cssVar("--ground"); ctx.fill();
       ctx.beginPath(); ctx.arc(e.x, e.y, 4, 0, Math.PI * 2); ctx.fillStyle = e.s.color; ctx.fill();
       if (e.y - lastLabelY >= 1.15 * rem) {

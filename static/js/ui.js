@@ -127,6 +127,7 @@ export class Rooms {
   constructor() {
     this.host = $("#rooms"); this.cards = new Map();
     this.offset = 0; this.timer = null; this.last = null;
+    this.onWindow = null; // callback(visibleIds) — the legend and charts highlight these
   }
 
   /** Which node ids are visible right now: all of them, or a wrapping window of maxRoomCards. */
@@ -156,6 +157,7 @@ export class Rooms {
     if (rotating && !this.timer) this.timer = setInterval(() => this._advance(), CONFIG.roomRotateMs);
     if (!rotating && this.timer) { clearInterval(this.timer); this.timer = null; this.offset = 0; }
     const visible = this._visibleIds(ids);
+    if (this.onWindow) this.onWindow(visible);
 
     const names = displayNames(nodes, meta);
     for (const [id, card] of this.cards) if (!nodes.has(id)) { card.el.remove(); this.cards.delete(id); }
@@ -218,11 +220,58 @@ export class Rooms {
   }
 }
 
+/**
+ * One legend for all charts: a chip per device in node order. Chips whose card is
+ * showing right now are lit (and numbered in card order, left to right); the rest are
+ * dimmed, exactly like their lines in the charts.
+ */
+export class Legend {
+  constructor() { this.host = $("#legend"); this.chips = new Map(); this.active = []; }
+
+  setActive(ids) {
+    this.active = ids;
+    for (const [id, chip] of this.chips) this._mark(id, chip);
+  }
+
+  _mark(id, chip) {
+    const pos = this.active.indexOf(id);
+    const lit = pos >= 0;
+    setClass(chip.el, `chip ${lit ? "lit" : "dim"}`);
+    setText(chip.pos, lit ? String(pos + 1) : "");
+  }
+
+  update(nodes, meta) {
+    const names = displayNames(nodes, meta);
+    for (const [id, chip] of this.chips) if (!nodes.has(id)) { chip.el.remove(); this.chips.delete(id); }
+    for (const node of nodes.values()) {
+      let chip = this.chips.get(node.id);
+      if (!chip) {
+        const root = el("span", "chip");
+        root.innerHTML = `<i><b></b></i><span class="n"></span>`;
+        chip = { el: root, pos: root.querySelector("b"), name: root.querySelector(".n") };
+        this.chips.set(node.id, chip);
+      }
+      this.host.appendChild(chip.el); // DOM order = node order
+      chip.el.style.setProperty("--c", node.color);
+      setText(chip.name, names.get(node.id));
+      this._mark(node.id, chip);
+    }
+  }
+}
+
 export class Charts {
-  constructor() { this.host = $("#charts"); this.charts = new Map(); }
+  constructor() { this.host = $("#charts"); this.charts = new Map(); this.active = null; }
+
+  /** ids whose cards are showing; null = highlight everything. */
+  setActive(ids) {
+    this.active = ids;
+    this.last && this.update(...this.last);
+  }
 
   update(nodes, meta, fromMs, toMs, gapMs) {
+    this.last = [nodes, meta, fromMs, toMs, gapMs];
     const names = displayNames(nodes, meta);
+    const lit = this.active ? new Set(this.active) : null;
     const byType = new Map();
     for (const node of nodes.values()) for (const s of node.sensors.values()) {
       if (s.info.noChart) continue; // rating enums live on the cards, not in the grid
@@ -240,7 +289,8 @@ export class Charts {
       this.host.appendChild(chart.el);
       chart.update({
         info: entries[0].s.info, fromMs, toMs, gapMs,
-        series: entries.map(({ node, s }) => ({ name: names.get(node.id), color: node.color, values: s.values })),
+        series: entries.map(({ node, s }) => ({ name: names.get(node.id), color: node.color, values: s.values,
+                                                active: !lit || lit.has(node.id) })),
       });
     });
     const cols = getComputedStyle(this.host).gridTemplateColumns.split(" ").length || 2;

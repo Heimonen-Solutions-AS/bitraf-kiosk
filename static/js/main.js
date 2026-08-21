@@ -5,7 +5,7 @@ import { LiveSource, SnapshotSource } from "./api.js";
 import { $ } from "./format.js";
 import { addDerivedMetrics } from "./derived.js";
 import { Store } from "./model.js";
-import { Banner, Charts, Footer, Header, Rooms } from "./ui.js";
+import { Banner, Charts, Footer, Header, Legend, Rooms } from "./ui.js";
 
 // Per-screen safe-area override: ?inset=4 (percent, both axes) or ?insetX=2&insetY=5.
 {
@@ -19,8 +19,17 @@ const store = new Store();
 const header = new Header();
 const banner = new Banner();
 const rooms = new Rooms();
+const legend = new Legend();
 const charts = new Charts();
 const footer = new Footer();
+// The cards' sliding window drives the highlight in the legend and the charts.
+let windowIds = null;
+rooms.onWindow = (ids) => {
+  if (windowIds && ids.length === windowIds.length && ids.every((id, i) => id === windowIds[i])) return;
+  windowIds = ids;
+  legend.setActive(ids);
+  charts.setActive(ids);
+};
 
 let snapshot = null;
 try { const raw = $("#snapshot").textContent.trim(); if (raw) snapshot = JSON.parse(raw); } catch (e) { console.warn("snapshot parse failed", e); }
@@ -34,6 +43,7 @@ function render() {
   const gapMs = Math.max(store.bucketMs * 3.5, 6 * 60_000); // break lines across missing minutes
   banner.update(nodes, store.meta, store.latestMs, nowMs);
   rooms.update(nodes, store.meta, nowMs);
+  legend.update(nodes, store.meta);
   charts.update(nodes, store.meta, nowMs - CONFIG.windowHours * 3600_000, nowMs, gapMs);
   footer.setRange(store, store.latestMs);
   footer.setSource(snapshot?.nowMs);
