@@ -18,6 +18,7 @@ from .parser import ParseResult, Sample, parse_xml
 
 log = logging.getLogger(__name__)
 SOURCE_URL = "https://lightside-instruments.com/bitraf/data/"
+LATEST_MINUTES = 2  # minutes fetched per poll: the newest and the one before it
 ARCHIVE_DEPTH = 5  # year/month/day/hour/minute
 
 
@@ -142,6 +143,22 @@ class Poller:
                 return data_url
         raise RuntimeError(f"data.xml not found under {current}")
 
+    def url_for_time(self, time_ms: int) -> str:
+        t = datetime.fromtimestamp(time_ms / 1000, tz=timezone.utc)
+        return f"{self.source_url}{t:%Y/%m/%d/%H/%M}/data.xml"
+
+    def discover_latest_urls(self, count: int = LATEST_MINUTES) -> List[str]:
+        """The newest data.xml plus the `count - 1` minutes before it, newest first.
+
+        Derived by time arithmetic rather than directory listing so the list
+        crosses hour and day boundaries.
+        """
+        newest = self.discover_latest_url()
+        t = self.time_from_url(newest)
+        if t is None:
+            return [newest]
+        return [newest] + [self.url_for_time(t - 60_000 * i) for i in range(1, count)]
+
     def discover_all_urls(self) -> List[str]:
         dirs = [self.source_url]
         for _ in range(ARCHIVE_DEPTH):
@@ -185,20 +202,35 @@ class Poller:
             log.warning("could not store metadata: %s", exc)
 
     def poll(self) -> ParseResult:
-        """Fetch the newest snapshot, store it, publish it, and log the attempt."""
+        """Fetch the newest snapshots, store them, publish them, and log the attempt.
+
+        The origin creates the minute directory and data.xml a second or two into
+        the minute but only fills the file some 10-40 s later, so the newest minute
+        is often empty when we look. The minute before it is fetched as well and
+        whatever parses is stored (the DB drops duplicates), so a minute that is not
+        readable yet is picked up by the next poll. Returns the newest parsed result.
+        """
         start = time.time()
         rows_new = 0
+        results: List[ParseResult] = []
         status, message = "ok", None
         try:
-            result = self.parse_latest()
-            new = self.db.insert_samples([result.sample])
+            errors: List[str] = []
+            for url in self.discover_latest_urls():
+                try:
+                    results.append(self.parse_url(url))
+                except Exception as exc:  # noqa: BLE001 - an unreadable minute is expected
+                    errors.append(f"{url}: {exc}")
+            if not results:
+                raise RuntimeError("; ".join(errors))
+            new = self.db.insert_samples([r.sample for r in results])
             rows_new = len(new)
-            self._store_metadata(result)
+            self._store_metadata(results[0])
             if new:
                 self.events.publish({"type": "samples", "records": [s.as_dict() for s in new],
-                                     "metadata": result.metadata})
+                                     "metadata": results[0].metadata})
             self.last_error = None
-            return result
+            return results[0]
         except Exception as exc:
             status, message = "error", str(exc)
             self.last_error = message
@@ -206,7 +238,7 @@ class Poller:
         finally:
             duration_ms = int((time.time() - start) * 1000)
             try:
-                self.db.log_fetch(status, 1 if status == "ok" else 0, rows_new, duration_ms, message)
+                self.db.log_fetch(status, len(results), rows_new, duration_ms, message)
             except Exception as exc:  # noqa: BLE001
                 log.warning("could not write fetch log: %s", exc)
 

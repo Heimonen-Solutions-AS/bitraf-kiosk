@@ -33,6 +33,71 @@ class StoreMetadataTests(unittest.TestCase):
             self.assertEqual(meta["sampleTime"], 2)
 
 
+FIXTURE = (Path(__file__).parent / "fixtures" / "data.xml").read_text()
+
+
+class _ArchivePoller(Poller):
+    """Poller over an in-memory archive: url -> body ('' = created but not written yet)."""
+
+    def __init__(self, db, files):
+        super().__init__(db, "http://archive/data/")
+        self.files = files
+        self.fetched = []
+
+    def discover_latest_url(self):
+        return max(self.files)
+
+    def fetch_raw(self, url):
+        self.fetched.append(url)
+        if url not in self.files:
+            raise RuntimeError("network error: HTTP Error 404: Not Found")
+        return self.files[url]
+
+
+class PollTests(unittest.TestCase):
+    def _db(self, tmp):
+        db = SensorDB(Path(tmp) / "t.sqlite")
+        db.initialize()
+        return db
+
+    def test_empty_newest_minute_falls_back_to_the_one_before(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = self._db(tmp)
+            poller = _ArchivePoller(db, {
+                "http://archive/data/2026/08/21/12/59/data.xml": FIXTURE,
+                "http://archive/data/2026/08/21/13/00/data.xml": "",  # being written
+            })
+            result = poller.poll()
+            self.assertEqual(result.sample.time_ms, Poller.time_from_url("http://archive/data/2026/08/21/12/59/data.xml"))
+            self.assertEqual(db.count(), 1)
+            self.assertIsNone(poller.last_error)
+            self.assertEqual(db.last_fetch()["status"], "ok")
+
+    def test_both_minutes_readable_stores_both_newest_first(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = self._db(tmp)
+            poller = _ArchivePoller(db, {
+                "http://archive/data/2026/08/21/13/00/data.xml": FIXTURE,
+                "http://archive/data/2026/08/21/13/01/data.xml": FIXTURE,
+            })
+            result = poller.poll()
+            self.assertEqual(result.sample.time_ms, Poller.time_from_url("http://archive/data/2026/08/21/13/01/data.xml"))
+            self.assertEqual(db.count(), 2)
+            # the previous minute is already stored: the next poll adds nothing and stays ok
+            poller.poll()
+            self.assertEqual(db.count(), 2)
+            self.assertEqual(db.last_fetch()["rows_new"], 0)
+
+    def test_nothing_readable_raises_and_logs_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = self._db(tmp)
+            poller = _ArchivePoller(db, {"http://archive/data/2026/08/21/13/00/data.xml": ""})
+            with self.assertRaises(RuntimeError):
+                poller.poll()
+            self.assertEqual(db.last_fetch()["status"], "error")
+            self.assertIn("13/00", poller.last_error)
+
+
 class TimeFromUrlTests(unittest.TestCase):
     def test_archive_path(self):
         url = "https://lightside-instruments.com/bitraf/data/2026/08/18/13/14/data.xml"
