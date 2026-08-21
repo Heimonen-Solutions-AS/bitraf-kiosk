@@ -37,7 +37,7 @@ export class LineChart {
 
   setIndex(index) { this.numEl.textContent = String(index + 1).padStart(2, "0"); }
 
-  /** series: [{name, color, values:[[t,v]...], active}] — active series are drawn last, thicker and haloed */
+  /** series: [{name, color, values:[[t,v]...], active}] — active series are drawn last, with a dark casing */
   update({ info, series, fromMs, toMs, gapMs }) {
     this.info = info; this.series = series; this.fromMs = fromMs; this.toMs = toMs; this.gapMs = gapMs;
     if (this.titleEl.textContent !== info.label) this.titleEl.textContent = info.label;
@@ -114,7 +114,7 @@ export class LineChart {
     }
 
     // series: everything at the normal 2 px; the active ones (cards showing) are drawn
-    // last, on top, a little thicker and with a soft halo — nothing else is weakened
+    // last, on top, with a thin ground-coloured casing on each side — nothing else changes
     const ends = [];
     const ordered = [...series.filter((s) => !s.active), ...series.filter((s) => s.active)];
     ctx.lineJoin = "round"; ctx.lineCap = "round";
@@ -126,11 +126,10 @@ export class LineChart {
         if (prevT == null || t - prevT > this.gapMs) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         prevT = t;
       }
-      ctx.strokeStyle = s.color;
-      if (s.active && CONFIG.highlightHalo > 0) {
-        ctx.globalAlpha = CONFIG.highlightHalo; ctx.lineWidth = CONFIG.highlightWidth + 5; ctx.stroke(); ctx.globalAlpha = 1;
+      if (s.active && CONFIG.highlightCasing > 0) {
+        ctx.strokeStyle = cssVar("--ground"); ctx.lineWidth = CONFIG.highlightWidth + 2 * CONFIG.highlightCasing; ctx.stroke();
       }
-      ctx.lineWidth = s.active ? CONFIG.highlightWidth : 2;
+      ctx.strokeStyle = s.color; ctx.lineWidth = s.active ? CONFIG.highlightWidth : 2;
       ctx.stroke();
       const [lt, lv] = s.values[s.values.length - 1];
       ends.push({ s, x: X(lt), y: Y(lv), v: lv });
