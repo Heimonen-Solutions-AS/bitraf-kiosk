@@ -1,9 +1,10 @@
 // Data store: rows (time → metrics) + metadata, and the derived per-node/per-sensor model.
 import { CONFIG } from "./config.js";
 import { cssVar } from "./format.js";
+import { generatedColor } from "./palette.js";
 import { sensorType, statusOf, typeInfo } from "./sensors.js";
 
-const SERIES_SLOTS = Array.from({ length: 16 }, (_, i) => `--s${i + 1}`); // --s1..--s16 in kiosk.css
+const SERIES_SLOTS = Array.from({ length: 32 }, (_, i) => `--s${i + 1}`); // --s1..--s32 in kiosk.css
 
 export class Store {
   constructor() {
@@ -49,10 +50,12 @@ export class Store {
     for (const t of this.rows.keys()) if (t < cutoff) this.rows.delete(t);
   }
 
-  /** Stable colour slot per node: first appearance claims the next free slot. */
+  /** Stable colour slot per node: first appearance claims the next free slot.
+   *  The fixed palette covers the first 32; after that colours are generated, never reused. */
   colorFor(nodeId) {
     if (!this.slotByNode.has(nodeId)) this.slotByNode.set(nodeId, this.slotByNode.size);
-    return cssVar(SERIES_SLOTS[this.slotByNode.get(nodeId) % SERIES_SLOTS.length]);
+    const slot = this.slotByNode.get(nodeId);
+    return slot < SERIES_SLOTS.length ? cssVar(SERIES_SLOTS[slot]) : generatedColor(slot);
   }
 
   /**

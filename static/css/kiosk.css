@@ -14,13 +14,18 @@
   --warning:    #fab219;
   --critical:   #d03b3b;
   --stale:      #838381;
-  /* Series palette: 16 colours picked by farthest-point search in OKLab (hue-weighted)
-     so no two are alike on a 2 px line over the near-black ground. Slot order is the
-     assignment order, so the first few are the most different from each other. */
+  /* Series palette: 32 colours picked by farthest-point search in OKLab (hue-weighted,
+     bright enough for the near-black ground) so the closest pair is as far apart as
+     possible. Slot order is assignment order, so the first devices get the most
+     different colours. Past --s32 the kiosk generates colours (js/palette.js). */
   --s1: #078be3; --s2: #c845c7; --s3: #ea3f00; --s4: #04a322;
   --s5: #e5d50d; --s6: #0af2cd; --s7: #8566fd; --s8: #ff97ce;
   --s9: #ffa659; --s10: #e63281; --s11: #89f04a; --s12: #07d2fe;
   --s13: #898d09; --s14: #9ba0fe; --s15: #12b288; --s16: #fe7f7a;
+  --s17: #ba7404; --s18: #d184fe; --s19: #94bc12; --s20: #d2a408;
+  --s21: #1af796; --s22: #fe69d5; --s23: #5379fd; --s24: #ab54e9;
+  --s25: #ff506b; --s26: #e97200; --s27: #67affd; --s28: #00cb79;
+  --s29: #0fd8da; --s30: #c1e300; --s31: #d93ba6; --s32: #4eca2a;
   --sans: 'Roboto', system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   /* One rem follows the smaller screen axis so the whole board always fits:
