@@ -15,6 +15,10 @@ export const CONFIG = {
   // ground-coloured casing on each side. Nothing else changes.
   highlightWidth: 2,      // same as every other line
   highlightCasing: 1.5,   // px of dark edge on each side (0 = off)
+  // Chart y axis: the data plus a margin; a limit line is drawn only when it falls
+  // inside that margin. Margin = max(yPad × data span, yPadBand × width of the good band).
+  yPad: 0.15,
+  yPadBand: 0.1,          // temperature: 0.7 °C, CO₂: 80 ppm, humidity: 3 %
   locale: "en-GB",
   eyebrow: "Bitraf · Indoor climate — Oslo, Norway",
   headline: "Air quality now",

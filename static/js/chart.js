@@ -62,18 +62,18 @@ export class LineChart {
     const padR = 4.6 * rem, padT = 0.7 * rem, padB = 1.6 * rem;
     const ph = H - padT - padB;
 
-    // y extent, pulling in the nearest threshold when it is within reach
+    // y extent: the data plus a small margin. Threshold lines are drawn only when they
+    // fall inside that margin, so a limit slides into view as the data approaches it
+    // instead of squashing the chart all day. The margin has a floor in the metric's
+    // own units (a fraction of the good band) so flat data still shows a nearby limit.
     let lo = Infinity, hi = -Infinity;
     for (const s of series) for (const [, v] of s.values) { if (v < lo) lo = v; if (v > hi) hi = v; }
     if (!Number.isFinite(lo)) return;
     const thresholds = thresholdsFor(info);
-    const lo0 = lo, hi0 = hi, span0 = hi0 - lo0 || Math.abs(hi0) * 0.1 || 1;
-    for (const t of thresholds) {
-      if (t.value > hi0 && t.value - hi0 < span0 * 1.5) hi = Math.max(hi, t.value);
-      if (t.value < lo0 && lo0 - t.value < span0 * 1.5) lo = Math.min(lo, t.value);
-    }
+    const band = info.good && Number.isFinite(info.good[0]) && Number.isFinite(info.good[1]) ? info.good[1] - info.good[0] : 0;
     const span = hi - lo || Math.abs(hi) * 0.1 || 1;
-    lo -= span * 0.12; hi += span * 0.12;
+    const pad = Math.max(span * CONFIG.yPad, band * CONFIG.yPadBand);
+    lo -= pad; hi += pad;
     if (info.fair && info.fair[0] === 0 && lo < 0) lo = 0;
     // left padding follows the widest tick label so long values (1,007.5) never clip
     const yTicks = niceTicks(lo, hi, Math.max(2, Math.floor(ph / (2.6 * rem))));
