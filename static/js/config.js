@@ -14,7 +14,7 @@ export const CONFIG = {
   // Chart lines of the devices whose cards are showing are drawn on top with a thin
   // ground-coloured casing on each side. Nothing else changes.
   highlightWidth: 2,      // same as every other line
-  highlightCasing: 0.8,   // px of dark edge on each side (0 = off)
+  highlightCasing: 1.5,   // px of dark edge on each side (0 = off)
   locale: "en-GB",
   eyebrow: "Bitraf · Indoor climate — Oslo, Norway",
   headline: "Air quality now",

@@ -144,13 +144,14 @@ export class LineChart {
       else dot(e.x, e.y, 5, cssVar("--ground"));
       dot(e.x, e.y, 4, e.s.color);
     }
-    let lastLabelY = -Infinity;
-    for (const e of ends) {
-      if (e.y - lastLabelY >= 1.15 * rem) {
-        ctx.fillStyle = cssVar("--snow"); ctx.font = font(0.85 * rem, e.s.active ? 700 : 400); ctx.textAlign = "left"; ctx.textBaseline = "middle";
-        ctx.fillText(fmtNum(e.v, info.decimals), e.x + 0.65 * rem, e.y);
-        lastLabelY = e.y;
-      }
+    // labels: highlighted series claim their slot first, then the others fill the gaps
+    const minGap = 1.15 * rem;
+    const placed = [];
+    for (const e of [...ends.filter((e) => e.s.active), ...ends.filter((e) => !e.s.active)]) {
+      if (placed.some((y) => Math.abs(y - e.y) < minGap)) continue;
+      placed.push(e.y);
+      ctx.fillStyle = cssVar("--snow"); ctx.font = font(0.85 * rem, e.s.active ? 700 : 400); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText(fmtNum(e.v, info.decimals), e.x + 0.65 * rem, e.y);
     }
   }
 
