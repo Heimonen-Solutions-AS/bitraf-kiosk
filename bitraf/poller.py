@@ -17,7 +17,10 @@ from .db import META_KEY, SensorDB
 from .parser import ParseResult, Sample, parse_xml
 
 log = logging.getLogger(__name__)
-SOURCE_URL = "https://lightside-instruments.com/bitraf/data/"
+# The kiosk runs on the Pi that writes the archive and serves it on port 80, so the
+# local copy is the default: no lag, no dependency on the public mirror.
+SOURCE_URL = "http://127.0.0.1/data/"
+MIRROR_URL = "https://lightside-instruments.com/bitraf/data/"  # public mirror of the same files
 LATEST_MINUTES = 2  # minutes fetched per poll: the newest and the one before it
 ARCHIVE_DEPTH = 5  # year/month/day/hour/minute
 

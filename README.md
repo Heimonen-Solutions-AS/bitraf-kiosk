@@ -10,7 +10,7 @@ No dependencies beyond the Python 3.9+ standard library.
 ```
 python bitraf_kiosk.py                 # serve on http://0.0.0.0:8006/, poll every 60 s
 python bitraf_kiosk.py --backfill      # first fetch the whole archive (~27k files, a few minutes)
-python bitraf_kiosk.py --source http://127.0.0.1/data/   # on the Pi that writes the archive: read it locally, no lag
+python bitraf_kiosk.py --source https://lightside-instruments.com/bitraf/data/   # elsewhere than the Pi: use the public mirror
 python tools/seed_recent.py --hours 26 # quick alternative: last 26 h, every 5th minute
 python -m unittest discover -s tests   # run the tests
 python tools/build_preview.py          # single-file HTML with a frozen snapshot (for sharing)
