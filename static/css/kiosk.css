@@ -14,8 +14,13 @@
   --warning:    #fab219;
   --critical:   #d03b3b;
   --stale:      #838381;
-  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-  --s5: #d55181; --s6: #00b3c7; --s7: #9085e9; --s8: #e66767;
+  /* Series palette: 16 colours picked by farthest-point search in OKLab (hue-weighted)
+     so no two are alike on a 2 px line over the near-black ground. Slot order is the
+     assignment order, so the first few are the most different from each other. */
+  --s1: #078be3; --s2: #c845c7; --s3: #ea3f00; --s4: #04a322;
+  --s5: #e5d50d; --s6: #0af2cd; --s7: #8566fd; --s8: #ff97ce;
+  --s9: #ffa659; --s10: #e63281; --s11: #89f04a; --s12: #07d2fe;
+  --s13: #898d09; --s14: #9ba0fe; --s15: #12b288; --s16: #fe7f7a;
   --sans: 'Roboto', system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   /* One rem follows the smaller screen axis so the whole board always fits:

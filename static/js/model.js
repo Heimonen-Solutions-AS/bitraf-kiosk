@@ -3,7 +3,7 @@ import { CONFIG } from "./config.js";
 import { cssVar } from "./format.js";
 import { sensorType, statusOf, typeInfo } from "./sensors.js";
 
-const SERIES_SLOTS = ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6", "--s7", "--s8"];
+const SERIES_SLOTS = Array.from({ length: 16 }, (_, i) => `--s${i + 1}`); // --s1..--s16 in kiosk.css
 
 export class Store {
   constructor() {
