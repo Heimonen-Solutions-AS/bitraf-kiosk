@@ -37,7 +37,7 @@ export class LineChart {
 
   setIndex(index) { this.numEl.textContent = String(index + 1).padStart(2, "0"); }
 
-  /** series: [{name, color, values:[[t,v]...], active}] — active series are drawn last, with a dark casing; others a tad weaker */
+  /** series: [{name, color, values:[[t,v]...], active}] — active series are drawn last, with a dark casing */
   update({ info, series, fromMs, toMs, gapMs }) {
     this.info = info; this.series = series; this.fromMs = fromMs; this.toMs = toMs; this.gapMs = gapMs;
     if (this.titleEl.textContent !== info.label) this.titleEl.textContent = info.label;
@@ -114,7 +114,7 @@ export class LineChart {
     }
 
     // series: the active ones (cards showing) are drawn last, on top, with a thin
-    // ground-coloured casing on each side; the others a tad weaker
+    // ground-coloured casing on each side
     const ends = [];
     const ordered = [...series.filter((s) => !s.active), ...series.filter((s) => s.active)];
     ctx.lineJoin = "round"; ctx.lineCap = "round";
@@ -129,10 +129,8 @@ export class LineChart {
       if (s.active && CONFIG.highlightCasing > 0) {
         ctx.strokeStyle = cssVar("--ground"); ctx.lineWidth = CONFIG.highlightWidth + 2 * CONFIG.highlightCasing; ctx.stroke();
       }
-      ctx.globalAlpha = s.active ? 1 : CONFIG.otherAlpha;
       ctx.strokeStyle = s.color; ctx.lineWidth = s.active ? CONFIG.highlightWidth : 2;
       ctx.stroke();
-      ctx.globalAlpha = 1;
       const [lt, lv] = s.values[s.values.length - 1];
       ends.push({ s, x: X(lt), y: Y(lv), v: lv });
     }

@@ -12,10 +12,9 @@ export const CONFIG = {
   roomRotateMs: 30_000,   // how long each window of cards is shown
   roomFadeMs: 700,        // crossfade duration when the window advances
   // Chart lines of the devices whose cards are showing are drawn on top with a thin
-  // ground-coloured casing on each side; the other lines are a tad weaker.
+  // ground-coloured casing on each side. Nothing else changes.
   highlightWidth: 2,      // same as every other line
   highlightCasing: 0.8,   // px of dark edge on each side (0 = off)
-  otherAlpha: 0.8,        // opacity of lines whose card is not showing (1 = off)
   locale: "en-GB",
   eyebrow: "Bitraf · Indoor climate — Oslo, Norway",
   headline: "Air quality now",
