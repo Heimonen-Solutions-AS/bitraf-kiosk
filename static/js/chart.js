@@ -136,20 +136,18 @@ export class LineChart {
       const [lt, lv] = s.values[s.values.length - 1];
       ends.push({ s, x: X(lt), y: Y(lv), v: lv });
     }
-    // end marker + end label where it fits: a round dot for every series, a diamond
-    // (and a bold label) for the ones whose card is showing
-    const marker = (x, y, r, diamond) => {
-      ctx.beginPath();
-      if (diamond) { ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
-      else ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    };
+    // end marker + end label where it fits. Every series gets a round dot; the ones
+    // whose card is showing get a snow-white outline (like the lit legend chips), a bold
+    // label, and are drawn after the others so they sit on top.
+    const dot = (x, y, r, fill) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); };
     ends.sort((a, b) => a.y - b.y);
+    for (const e of [...ends.filter((e) => !e.s.active), ...ends.filter((e) => e.s.active)]) {
+      if (e.s.active) { dot(e.x, e.y, 7, cssVar("--ground")); dot(e.x, e.y, 5.5, cssVar("--snow")); }
+      else dot(e.x, e.y, 5, cssVar("--ground"));
+      dot(e.x, e.y, 4, e.s.color);
+    }
     let lastLabelY = -Infinity;
     for (const e of ends) {
-      const r = e.s.active ? 6 : 4;
-      ctx.fillStyle = cssVar("--ground"); marker(e.x, e.y, r + 1.5, e.s.active);
-      ctx.fillStyle = e.s.color; marker(e.x, e.y, r, e.s.active);
       if (e.y - lastLabelY >= 1.15 * rem) {
         ctx.fillStyle = cssVar("--snow"); ctx.font = font(0.85 * rem, e.s.active ? 700 : 400); ctx.textAlign = "left"; ctx.textBaseline = "middle";
         ctx.fillText(fmtNum(e.v, info.decimals), e.x + 0.65 * rem, e.y);
