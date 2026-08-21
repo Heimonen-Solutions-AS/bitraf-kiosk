@@ -11,10 +11,10 @@ export const CONFIG = {
   maxRoomCards: 3,        // more nodes than this → the cards rotate in a sliding window
   roomRotateMs: 30_000,   // how long each window of cards is shown
   roomFadeMs: 700,        // crossfade duration when the window advances
-  // Chart lines of the devices whose cards are showing: drawn on top with a thin
-  // ground-coloured casing on each side so they stand out. Nothing else changes.
+  // Chart lines of the devices whose cards are showing get a thin white casing on each
+  // side so they stand out. Draw order never changes; nothing else changes.
   highlightWidth: 2.4,
-  highlightCasing: 1.2,   // px of dark edge on each side (0 = off)
+  highlightCasing: 1.2,   // px of white edge on each side (0 = off)
   locale: "en-GB",
   eyebrow: "Bitraf · Indoor climate — Oslo, Norway",
   headline: "Air quality now",
