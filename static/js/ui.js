@@ -35,6 +35,15 @@ function splitName(label) {
   return i < 0 ? [label, ""] : [label.slice(0, i), label.slice(i + 3)];
 }
 
+/** Minutes of silence before a node counts as quiet: per device type, else the default. */
+export function quietMinFor(m) {
+  const device = `${m.manufacturer || ""} ${m.model || ""}`.toLowerCase();
+  for (const [needle, min] of Object.entries(CONFIG.nodeQuietMinByDevice || {})) {
+    if (needle && device.includes(needle.toLowerCase())) return min;
+  }
+  return CONFIG.nodeQuietMin;
+}
+
 function deviceTags(node, meta, nowMs) {
   const nodeId = node.id;
   const m = (meta.nodes || {})[nodeId] || {};
@@ -46,7 +55,7 @@ function deviceTags(node, meta, nowMs) {
   if (device && device !== name) tags.push({ text: device });
   tags.push({ text: nodeId });
   if (!m.location && !CONFIG.rooms[nodeId]) tags.push({ text: "location not set", cls: "warn" });
-  if (node.lastSeen != null && nowMs - node.lastSeen > CONFIG.nodeQuietMin * 60_000) {
+  if (node.lastSeen != null && nowMs - node.lastSeen > quietMinFor(m) * 60_000) {
     tags.push({ text: `last seen ${fmtTime(node.lastSeen)} · ${fmtAgo(nowMs - node.lastSeen)}`, cls: "quiet" });
   }
   return tags;

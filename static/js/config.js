@@ -7,6 +7,11 @@ export const CONFIG = {
   redrawMs: 30_000,       // roll the time axis even when no new data arrived
   staleAfterMin: 15,      // banner: warn when the newest sample (any node) is older than this
   nodeQuietMin: 30,       // room card: show "last seen" when a device has not reported for this long
+  // Per device type: minutes before "last seen" shows, matched case-insensitively as a
+  // substring of the node's "manufacturer model" from the archive metadata; first match wins.
+  nodeQuietMinByDevice: {
+    "Aqara": 60,          // lumi.weather reports about once an hour
+  },
   infoLink: "wiki.bitraf.no/wiki/Sensornettverk", // shown in the footer
   maxRoomCards: 3,        // more nodes than this → the cards rotate in a sliding window
   roomRotateMs: 30_000,   // how long each window of cards is shown
