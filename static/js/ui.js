@@ -61,12 +61,14 @@ function deviceTags(node, meta, nowMs) {
   return tags;
 }
 
-function fmtAgo(ms) {
+/** "45 min ago", "1 h 30 min ago", "2 d 3 h ago" — never rounded down to a bare hour or day. */
+export function fmtAgo(ms) {
   const min = Math.round(ms / 60_000);
   if (min < 60) return `${min} min ago`;
-  const h = Math.floor(min / 60);
-  if (h < 48) return `${h} h ago`;
-  return `${Math.floor(h / 24)} d ago`;
+  const h = Math.floor(min / 60), m = min % 60;
+  if (h < 48) return m ? `${h} h ${m} min ago` : `${h} h ago`;
+  const d = Math.floor(h / 24), hh = h % 24;
+  return hh ? `${d} d ${hh} h ago` : `${d} d ago`;
 }
 
 function trendArrow(s) {
