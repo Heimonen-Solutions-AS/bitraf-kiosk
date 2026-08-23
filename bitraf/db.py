@@ -113,6 +113,13 @@ class SensorDB:
         with self._connect() as db:
             return {int(r[0]) for r in db.execute("SELECT time_ms FROM samples")}
 
+    def iter_rows(self, from_ms: int, to_ms: int):
+        """Yield (time_ms, metrics dict) for every raw row in [from_ms, to_ms], oldest first."""
+        with self._connect() as db:
+            for t, mj in db.execute("SELECT time_ms, metrics_json FROM samples WHERE time_ms BETWEEN ? AND ? "
+                                    "ORDER BY time_ms", (from_ms, to_ms)):
+                yield int(t), json.loads(mj)
+
     def rows_in_range(self, from_ms: int, to_ms: int, max_points: int = 1800) -> Tuple[List[dict], int]:
         """Rows in [from_ms, to_ms]. Above max_points they are averaged into
         whole-minute buckets. Returns (rows, bucket_ms) with bucket_ms == 0 for raw rows."""

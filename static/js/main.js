@@ -5,7 +5,7 @@ import { LiveSource, SnapshotSource } from "./api.js";
 import { $ } from "./format.js";
 import { addDerivedMetrics } from "./derived.js";
 import { Store } from "./model.js";
-import { Banner, Charts, Footer, Header, Legend, Rooms } from "./ui.js";
+import { Banner, Charts, Footer, Header, Legend, RollCall, Rooms } from "./ui.js";
 
 // Per-screen safe-area override: ?inset=4 (percent, both axes) or ?insetX=2&insetY=5.
 {
@@ -19,6 +19,9 @@ const store = new Store();
 const header = new Header();
 const banner = new Banner();
 const rooms = new Rooms();
+const rollcall = new RollCall();
+rooms.altEl = rollcall.host;
+rooms.canRollCall = () => rollcall.ready;
 const legend = new Legend();
 const charts = new Charts();
 const footer = new Footer();
@@ -40,9 +43,14 @@ function render() {
   store.prune(nowMs);
   const nodes = store.model(nowMs);
   addDerivedMetrics(nodes, store.meta);
+  // a node quiet for longer than the chart window keeps its "last seen" from the weekly stats
+  if (stats) for (const node of nodes.values()) {
+    if (node.lastSeen == null && stats.nodes[node.id]) node.lastSeen = stats.nodes[node.id].lastMs;
+  }
   const gapMs = Math.max(store.bucketMs * 3.5, 6 * 60_000); // break lines across missing minutes
   banner.update(nodes, store.meta, store.latestMs, nowMs);
   rooms.update(nodes, store.meta, nowMs);
+  rollcall.update(nodes, store.meta);
   legend.update(nodes, store.meta);
   charts.update(nodes, store.meta, nowMs - CONFIG.windowHours * 3600_000, nowMs, gapMs);
   footer.setRange(store, store.latestMs);
@@ -63,6 +71,16 @@ source.start().catch((err) => {
   footer.setLive("off", "offline – retrying");
   setTimeout(() => source.start().catch(() => {}), CONFIG.pollFallbackMs);
 });
+
+// Weekly statistics for the roll-call panel.
+let stats = null;
+async function refreshStats() {
+  try {
+    const r = await fetch(`/api/stats?days=${CONFIG.rollCallDays}`);
+    if (r.ok) { stats = await r.json(); rollcall.setStats(stats); if (store.rows.size) render(); }
+  } catch (err) { console.warn("stats fetch failed", err); }
+}
+if (!snapshot) { refreshStats(); setInterval(refreshStats, 10 * 60_000); }
 
 // Roll the axis / stale check even without new data.
 setInterval(() => { if (store.rows.size) render(); }, CONFIG.redrawMs);

@@ -1,6 +1,7 @@
 // Header, alert banner, room cards, charts grid and footer.
 // Everything updates in place (keyed elements) so refreshes never flash or reflow.
 import { CONFIG } from "./config.js";
+import { buildInsights } from "./insights.js";
 import { LineChart } from "./chart.js";
 import { $, el, escapeHtml, fmtDate, fmtNum, fmtTime, setClass, setHtml, setText } from "./format.js";
 import { STATUS_RANK, STATUS_WORD, valueWord } from "./sensors.js";
@@ -139,6 +140,10 @@ export class Rooms {
     this.host = $("#rooms"); this.cards = new Map();
     this.offset = 0; this.timer = null; this.last = null;
     this.onWindow = null; // callback(visibleIds) — the legend and charts highlight these
+    // roll-call: shown for one rotation slot after every full pass of the cards
+    this.altEl = null;          // the roll-call panel's element (set from main.js)
+    this.canRollCall = null;    // () => panel has stats to show
+    this.rollCall = false; this.pagesShown = 1; this.idleTimer = null;
   }
 
   /** Which node ids are visible right now: all of them, or a wrapping window of maxRoomCards. */
@@ -149,16 +154,39 @@ export class Rooms {
     return Array.from({ length: max }, (_, i) => ids[(this.offset + i) % ids.length]);
   }
 
+  _rollCallReady() { return CONFIG.rollCall && this.altEl && this.canRollCall && this.canRollCall(); }
+
+  _fade(on) {
+    this.host.classList.toggle("fading", on);
+    if (this.altEl) this.altEl.classList.toggle("fading", on);
+  }
+
+  _rerender() { this.update(this.last.nodes, this.last.meta, this.last.nowMs); }
+
   _advance() {
     if (!this.last) return;
     const ids = [...this.last.nodes.keys()];
-    if (ids.length <= CONFIG.maxRoomCards) return;
-    this.host.classList.add("fading");
+    if (ids.length <= CONFIG.maxRoomCards && !this.rollCall) return;
+    const pages = Math.max(1, Math.ceil(ids.length / CONFIG.maxRoomCards));
+    this._fade(true);
     setTimeout(() => {
-      this.offset = (this.offset + CONFIG.maxRoomCards) % ids.length;
-      this.update(this.last.nodes, this.last.meta, this.last.nowMs);
-      this.host.classList.remove("fading");
+      if (this.rollCall) { this.rollCall = false; this.offset = 0; this.pagesShown = 1; }
+      else if (this.pagesShown >= pages && this._rollCallReady()) { this.rollCall = true; }
+      else { this.offset = (this.offset + CONFIG.maxRoomCards) % ids.length; this.pagesShown += 1; }
+      this._rerender();
+      this._fade(false);
     }, CONFIG.roomFadeMs);
+  }
+
+  /** Boards with no rotation still get the roll-call now and then. */
+  _idleRollCall() {
+    if (this.rollCall || !this.last || !this._rollCallReady()) return;
+    this._fade(true);
+    setTimeout(() => { this.rollCall = true; this._rerender(); this._fade(false); }, CONFIG.roomFadeMs);
+    setTimeout(() => {
+      this._fade(true);
+      setTimeout(() => { this.rollCall = false; this._rerender(); this._fade(false); }, CONFIG.roomFadeMs);
+    }, CONFIG.roomRotateMs);
   }
 
   update(nodes, meta, nowMs) {
@@ -167,6 +195,13 @@ export class Rooms {
     const rotating = ids.length > CONFIG.maxRoomCards;
     if (rotating && !this.timer) this.timer = setInterval(() => this._advance(), CONFIG.roomRotateMs);
     if (!rotating && this.timer) { clearInterval(this.timer); this.timer = null; this.offset = 0; }
+    if (CONFIG.rollCall && !rotating && ids.length && !this.idleTimer) {
+      this.idleTimer = setInterval(() => this._idleRollCall(), CONFIG.rollCallIdleMin * 60_000);
+    }
+    if ((rotating || !ids.length) && this.idleTimer) { clearInterval(this.idleTimer); this.idleTimer = null; }
+    this.host.hidden = this.rollCall;
+    if (this.altEl) this.altEl.hidden = !this.rollCall;
+    if (this.rollCall) { if (this.onWindow) this.onWindow([]); return; }  // cards stay built underneath
     const visible = this._visibleIds(ids);
     if (this.onWindow) this.onWindow(visible);
 
@@ -212,7 +247,7 @@ export class Rooms {
         setText(row.st, `${STATUS_WORD[s.status]} ${trendArrow(s)}`.trim());
       }
       for (const [type, row] of card.stats) if (!seen.has(type)) { row.el.remove(); card.stats.delete(type); }
-      card.empty.hidden = !!(hero || rest.length);
+      card.empty.hidden = !!(hero || rest.length) || node.lastSeen != null;
     }
     for (const [id, card] of this.cards) if (!visible.includes(id) && card.el.parentNode) card.el.remove();
   }
@@ -264,6 +299,59 @@ export class Legend {
       this._mark(node.id, chip);
     }
   }
+}
+
+/** Full-width weekly panel: one row per device, same colours, one insight sentence. */
+export class RollCall {
+  constructor() {
+    this.host = $("#rollcall");
+    this.host.innerHTML = `<div class="rc-head"><span class="rc-title">Weekly roll-call</span><span class="rc-sub"></span></div><div class="rc-rows"></div>`;
+    this.sub = this.host.querySelector(".rc-sub");
+    this.rowsEl = this.host.querySelector(".rc-rows");
+    this.rows = new Map(); this.stats = null; this.ready = false;
+  }
+
+  setStats(stats) { this.stats = stats; }
+
+  update(nodes, meta) {
+    const stats = this.stats;
+    this.ready = !!(stats && stats.nodes && nodes.size);
+    if (!this.ready) return;
+    setText(this.sub, `last ${stats.days} days · updated ${fmtTime(stats.generatedAt)}`);
+    const names = displayNames(nodes, meta);
+    const insights = buildInsights(stats);
+    this.rowsEl.classList.toggle("many", nodes.size > 10);
+    for (const [id, row] of this.rows) if (!nodes.has(id)) { row.el.remove(); this.rows.delete(id); }
+    for (const node of nodes.values()) {
+      let row = this.rows.get(node.id);
+      if (!row) {
+        const root = el("div", "rc-row");
+        root.innerHTML = `<i></i><div class="rc-main"><div class="rc-name"></div><div class="rc-stats"></div></div><div class="rc-insight"></div>`;
+        row = { el: root, name: root.querySelector(".rc-name"), stats: root.querySelector(".rc-stats"), insight: root.querySelector(".rc-insight") };
+        this.rows.set(node.id, row);
+      }
+      this.rowsEl.appendChild(row.el); // node order, same as the legend and the card rotation
+      row.el.style.setProperty("--c", node.color);
+      const m = (meta.nodes || {})[node.id] || {};
+      const device = [m.manufacturer, m.model].filter(Boolean).join(" ");
+      setHtml(row.name, `${escapeHtml(names.get(node.id))}${device ? ` <small>${escapeHtml(device)}</small>` : ""}`);
+      const st = stats.nodes[node.id];
+      setText(row.stats, st ? rollCallStatLine(st) : "no data this week");
+      const ins = insights.get(node.id);
+      setHtml(row.insight, ins || "steady all week — nothing to report");
+      setClass(row.insight, ins ? "rc-insight" : "rc-insight quiet");
+    }
+  }
+}
+
+function rollCallStatLine(st) {
+  const t = st.types || {};
+  const parts = [];
+  if (t.temperature) parts.push(`avg ${fmtNum(t.temperature.avg, 1)} °C`);
+  if (t.humidity) parts.push(`${fmtNum(t.humidity.avg, 0)} % RH`);
+  if (t.co2) parts.push(`CO₂ ${fmtNum(t.co2.avg, 0)} ppm`);
+  if (t.radon) parts.push(`radon ${fmtNum(t.radon.avg, 0)} Bq/m³`);
+  return parts.slice(0, 4).join(" · ") || "—";
 }
 
 export class Charts {

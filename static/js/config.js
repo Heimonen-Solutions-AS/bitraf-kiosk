@@ -16,6 +16,9 @@ export const CONFIG = {
   maxRoomCards: 3,        // more nodes than this → the cards rotate in a sliding window
   roomRotateMs: 30_000,   // how long each window of cards is shown
   roomFadeMs: 700,        // crossfade duration when the window advances
+  rollCall: true,         // after a full pass of the room cards, show the weekly roll-call panel
+  rollCallDays: 7,        // statistics window for the roll-call (server /api/stats)
+  rollCallIdleMin: 5,     // boards with no card rotation show the roll-call this often instead
   // Chart lines of the devices whose cards are showing are drawn on top with a thin
   // ground-coloured casing on each side. Nothing else changes.
   highlightWidth: 2,      // same as every other line

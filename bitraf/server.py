@@ -9,16 +9,19 @@ import logging
 import mimetypes
 from pathlib import Path
 import queue
+import threading
 import time
 from typing import List, Optional
 from urllib.parse import parse_qs, urlparse
 
 from .db import META_KEY, SensorDB
 from .poller import Poller
+from .stats import weekly_stats
 
 log = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 SSE_HEARTBEAT_SEC = 15
+STATS_TTL_SEC = 600
 
 
 def chart_payload(rows: List[dict], **extra) -> dict:
@@ -153,12 +156,28 @@ class KioskHandler(BaseHTTPRequestHandler):
             if lo is None:
                 return self._json(chart_payload([], bounds={"min": None, "max": None}))
             return self._json(self._range(lo, hi, min(5000, self._int(q.get("maxPoints"), 1800, min_value=50))))
+        if path == "/api/stats":
+            days = self._int(q.get("days"), 7, min_value=1)
+            return self._json(self._stats(min(31, days)))
         if path == "/api/export.csv":
             stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
             return self._send(self.db.export_csv(), "text/csv; charset=utf-8", headers={
                 "Content-Disposition": f'attachment; filename="bitraf-sensor-data-{stamp}.csv"',
                 "Cache-Control": "no-store"})
         self._json({"error": "not found"}, HTTPStatus.NOT_FOUND)
+
+    _stats_lock = threading.Lock()
+    _stats_cache: dict = {}  # days -> (monotonic_time, payload)
+
+    def _stats(self, days: int) -> dict:
+        with KioskHandler._stats_lock:
+            hit = KioskHandler._stats_cache.get(days)
+            if hit and time.monotonic() - hit[0] < STATS_TTL_SEC:
+                return hit[1]
+        payload = weekly_stats(self.db, days=days)
+        with KioskHandler._stats_lock:
+            KioskHandler._stats_cache[days] = (time.monotonic(), payload)
+        return payload
 
     def do_POST(self):
         path = urlparse(self.path).path.rstrip("/")
