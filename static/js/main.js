@@ -69,7 +69,7 @@ const source = snapshot ? new SnapshotSource(snapshot, handlers) : new LiveSourc
 source.start().catch((err) => {
   console.error(err);
   banner.error(`Cannot reach the kiosk service: ${err.message}`);
-  footer.setLive("off", "offline – retrying");
+  footer.setLive("off", "offline · retrying");
   setTimeout(() => source.start().catch(() => {}), CONFIG.pollFallbackMs);
 });
 

@@ -112,7 +112,7 @@ export class Banner {
       for (const s of node.sensors.values()) {
         if (s.status !== "poor" && s.status !== "fair") continue;
         if (STATUS_RANK[s.status] > STATUS_RANK[worst]) worst = s.status;
-        const advice = s.status === "poor" && s.info.advice ? ` – ${s.info.advice}` : "";
+        const advice = s.status === "poor" && s.info.advice ? ` · ${s.info.advice}` : "";
         const value = valueWord(s.info, s.last[1]) ?? `${fmtNum(s.last[1], s.info.decimals)} ${s.info.unit}`;
         items.push({ rank: STATUS_RANK[s.status], html:
           `<span class="item ${s.status}"><b>${escapeHtml(names.get(node.id))}</b> ${escapeHtml(s.info.label)} ${escapeHtml(value)}${escapeHtml(advice)}</span>` });
@@ -316,7 +316,7 @@ export class Legend {
   }
 }
 
-/** Stats panel: one block per device, same colours, one weighted-random fact per round. */
+/** Stats panel: one compact block per device, name + averages line + one fact per round. */
 export class StatsBoard {
   constructor() {
     this.host = $("#stats");
@@ -342,8 +342,7 @@ export class StatsBoard {
 
   update(nodes, meta) {
     const stats = this.stats;
-    this.ready = !!(stats && stats.nodes && nodes.size);
-    if (!this.ready) return;
+    if (!this.ready || !nodes.size) return;
     setText(this.sub, `last ${stats.days} days · updated ${fmtTime(stats.generatedAt)}`);
     const names = displayNames(nodes, meta);
     for (const [id, row] of this.rows) if (!nodes.has(id)) { row.el.remove(); this.rows.delete(id); }
@@ -427,7 +426,7 @@ export class Footer {
   }
   setRange(store, latestMs) {
     const res = store.aggregated ? `avg per ${Math.round(store.bucketMs / 60_000)} min` : "per minute";
-    setText(this.range, `last ${CONFIG.windowHours} h · ${res} · newest sample ${latestMs ? fmtTime(latestMs) : "–"}`);
+    setText(this.range, `last ${CONFIG.windowHours} h · ${res} · newest sample ${latestMs ? fmtTime(latestMs) : "·"}`);
   }
   setSource(previewMs) {
     setHtml(this.source, (previewMs ? `<span class="tag">PREVIEW · ${escapeHtml(new Date(previewMs).toLocaleString(CONFIG.locale))}</span>` : "") + escapeHtml(CONFIG.infoLink));

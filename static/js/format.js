@@ -5,7 +5,7 @@ export const cssVar = (name) => getComputedStyle(document.documentElement).getPr
 export const remPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize);
 
 export function fmtNum(v, decimals = 0) {
-  if (v == null || Number.isNaN(v)) return "–";
+  if (v == null || Number.isNaN(v)) return "·";
   return v.toLocaleString(CONFIG.locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 export const fmtTime = (ms) => new Date(ms).toLocaleTimeString(CONFIG.locale, { hour: "2-digit", minute: "2-digit" });

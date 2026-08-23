@@ -93,6 +93,6 @@ export class SnapshotSource {
   constructor(snapshot, handlers) { this.snapshot = snapshot; this.h = handlers; }
   async start() {
     this.h.onInitial(this.snapshot.data, this.snapshot.meta);
-    this.h.onState("off", "preview – static snapshot");
+    this.h.onState("off", "preview · static snapshot");
   }
 }
