@@ -338,11 +338,16 @@ export class StatsBoard {
   newRound() {
     this.picked = new Map();
     for (const [id, facts] of this.facts) this.picked.set(id, pickFact(facts));
+    this.dirty = true; // render once more even though the panel is about to be visible
   }
 
   update(nodes, meta) {
     const stats = this.stats;
     if (!this.ready || !nodes.size) return;
+    // never change the content while someone is looking at it: refresh only while
+    // hidden (preparing the next round) or on the render that opens a round
+    if (!this.host.hidden && !this.dirty) return;
+    this.dirty = false;
     setText(this.sub, `last ${stats.days} days · updated ${fmtTime(stats.generatedAt)}`);
     const names = displayNames(nodes, meta);
     for (const [id, row] of this.rows) if (!nodes.has(id)) { row.el.remove(); this.rows.delete(id); }
