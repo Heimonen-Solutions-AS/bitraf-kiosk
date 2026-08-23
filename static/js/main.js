@@ -5,7 +5,7 @@ import { LiveSource, SnapshotSource } from "./api.js";
 import { $ } from "./format.js";
 import { addDerivedMetrics } from "./derived.js";
 import { Store } from "./model.js";
-import { Banner, Charts, Footer, Header, Legend, RollCall, Rooms } from "./ui.js";
+import { Banner, Charts, Footer, Header, Legend, Rooms, StatsBoard } from "./ui.js";
 
 // Per-screen safe-area override: ?inset=4 (percent, both axes) or ?insetX=2&insetY=5.
 {
@@ -19,9 +19,10 @@ const store = new Store();
 const header = new Header();
 const banner = new Banner();
 const rooms = new Rooms();
-const rollcall = new RollCall();
-rooms.altEl = rollcall.host;
-rooms.canRollCall = () => rollcall.ready;
+const statsBoard = new StatsBoard();
+rooms.altEl = statsBoard.host;
+rooms.canStats = () => statsBoard.ready;
+rooms.onStatsRound = () => statsBoard.newRound();
 const legend = new Legend();
 const charts = new Charts();
 const footer = new Footer();
@@ -50,7 +51,7 @@ function render() {
   const gapMs = Math.max(store.bucketMs * 3.5, 6 * 60_000); // break lines across missing minutes
   banner.update(nodes, store.meta, store.latestMs, nowMs);
   rooms.update(nodes, store.meta, nowMs);
-  rollcall.update(nodes, store.meta);
+  statsBoard.update(nodes, store.meta);
   legend.update(nodes, store.meta);
   charts.update(nodes, store.meta, nowMs - CONFIG.windowHours * 3600_000, nowMs, gapMs);
   footer.setRange(store, store.latestMs);
@@ -72,12 +73,12 @@ source.start().catch((err) => {
   setTimeout(() => source.start().catch(() => {}), CONFIG.pollFallbackMs);
 });
 
-// Weekly statistics for the roll-call panel.
+// Weekly statistics for the stats panel.
 let stats = null;
 async function refreshStats() {
   try {
-    const r = await fetch(`/api/stats?days=${CONFIG.rollCallDays}`);
-    if (r.ok) { stats = await r.json(); rollcall.setStats(stats); if (store.rows.size) render(); }
+    const r = await fetch(`/api/stats?days=${CONFIG.statsDays}`);
+    if (r.ok) { stats = await r.json(); statsBoard.setStats(stats); if (store.rows.size) render(); }
   } catch (err) { console.warn("stats fetch failed", err); }
 }
 if (!snapshot) { refreshStats(); setInterval(refreshStats, 10 * 60_000); }

@@ -23,7 +23,7 @@ BANDS: Dict[str, Tuple[Tuple[float, float], Tuple[float, float]]] = {
     "pm10":        ((0, 20),  (0, 50)),
     "radon":       ((0, 100), (0, 150)),
 }
-GAP_MIN_MS = 10 * 60_000      # a silence never counts as a gap below this
+GAP_MIN_MS = 30 * 60_000      # short outages are acceptable: a silence under 30 min never counts
 GAP_CADENCE_FACTOR = 3        # ... or below this multiple of the node's own cadence
 DAY_MS = 24 * 3600_000
 

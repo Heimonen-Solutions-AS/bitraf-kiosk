@@ -161,23 +161,23 @@ body { -webkit-font-smoothing: antialiased; }
   .room .hero .v { font-size: 3.4rem; }
 }
 
-/* ---------- weekly roll-call: one row per device, shown between card passes ---------- */
-.rollcall { background: var(--snow); color: var(--ink-on-snow); border-radius: 5px; padding: 0.9rem 1.2rem 0.7rem;
-            border-left: 5px solid var(--hair); border-right: 5px solid var(--hair);
-            transition: opacity 0.7s ease; overflow: hidden; min-width: 0; }
-.rollcall[hidden] { display: none; }
-.rollcall.fading { opacity: 0; }
-.rc-head { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.3rem; }
-.rc-title { font-weight: 700; font-size: 1.45rem; }
-.rc-sub { margin-left: auto; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
-.rc-rows { display: grid; grid-template-columns: minmax(0, 1fr); }
-.rc-rows.many { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.8rem; }
-.rc-row { display: grid; grid-template-columns: auto minmax(0, 24rem) minmax(0, 1fr); gap: 0.8rem;
-          align-items: center; padding: 0.42rem 0; border-top: 1px solid rgba(0, 0, 0, 0.12); min-width: 0; }
-.rc-row i { width: 1.1rem; height: 0.55rem; border-radius: 2px; background: var(--c); flex: none; }
-.rc-main { min-width: 0; }
-.rc-name { font-weight: 700; font-size: 1.05rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rc-name small { font-family: var(--mono); font-size: 0.72rem; font-weight: 400; color: var(--muted); }
-.rc-stats { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rc-insight { font-size: 0.95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rc-insight.quiet { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+/* ---------- stats panel: one block per device, shown first and between card passes ---------- */
+.stats-board { background: var(--snow); color: var(--ink-on-snow); border-radius: 5px; padding: 0.9rem 1.2rem 0.7rem;
+               border-left: 5px solid var(--hair); border-right: 5px solid var(--hair);
+               transition: opacity 0.7s ease; overflow: hidden; min-width: 0; }
+.stats-board[hidden] { display: none; }
+.stats-board.fading { opacity: 0; }
+.st-head { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.3rem; }
+.st-title { font-weight: 700; font-size: 1.45rem; }
+.st-sub { margin-left: auto; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+/* column blocks: the grid grows sideways as devices are added */
+.st-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); gap: 0.15rem 1.6rem; }
+.st-row { padding: 0.4rem 0 0.3rem; border-top: 1px solid rgba(0, 0, 0, 0.12); min-width: 0; }
+.st-row i { width: 1.1rem; height: 0.55rem; border-radius: 2px; background: var(--c); flex: none; }
+.st-name { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.st-name .n { font-weight: 700; font-size: 1.05rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* content text is ink on snow, never muted grey: the kiosk display washes grey out */
+.st-avgs { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-on-snow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-fact { font-size: 0.95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-fact.crit { color: var(--critical); font-weight: 700; }
+.st-fact[hidden] { display: none; }

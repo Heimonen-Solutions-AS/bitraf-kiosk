@@ -192,6 +192,10 @@ class Poller:
         """
         try:
             merged = dict(self.db.get_meta(META_KEY) or {})
+            # metadata only moves forward: a backfill of old files must never
+            # overwrite newer locations/units with what an old snapshot said
+            if (parsed.metadata.get("sampleTime") or 0) < (merged.get("sampleTime") or 0):
+                return
             for section in ("nodes", "metrics"):
                 known = dict(merged.get(section) or {})
                 known.update(parsed.metadata.get(section) or {})

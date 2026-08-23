@@ -16,9 +16,9 @@ export const CONFIG = {
   maxRoomCards: 3,        // more nodes than this → the cards rotate in a sliding window
   roomRotateMs: 30_000,   // how long each window of cards is shown
   roomFadeMs: 700,        // crossfade duration when the window advances
-  rollCall: true,         // after a full pass of the room cards, show the weekly roll-call panel
-  rollCallDays: 7,        // statistics window for the roll-call (server /api/stats)
-  rollCallIdleMin: 5,     // boards with no card rotation show the roll-call this often instead
+  statsRound: true,       // stats panel: first thing on page load, then after every full card pass
+  statsDays: 7,           // statistics window (server /api/stats)
+  statsIdleMin: 5,        // boards with no card rotation show a stats round this often instead
   // Chart lines of the devices whose cards are showing are drawn on top with a thin
   // ground-coloured casing on each side. Nothing else changes.
   highlightWidth: 2,      // same as every other line
@@ -28,7 +28,7 @@ export const CONFIG = {
   yPad: 0.15,
   yPadBand: 0.1,          // temperature: 0.7 °C, CO₂: 80 ppm, humidity: 3 %
   locale: "en-GB",
-  eyebrow: "Bitraf · Indoor climate — Oslo, Norway",
+  eyebrow: "Bitraf · Indoor climate · Oslo, Norway",
   headline: "Air quality now",
   // Node ids or locations that skip the derived flatulence metric.
   flatulenceExclude: ["Room 217"],

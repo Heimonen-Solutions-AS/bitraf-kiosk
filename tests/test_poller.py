@@ -54,6 +54,23 @@ class _ArchivePoller(Poller):
         return self.files[url]
 
 
+class MetadataMonotonicTests(unittest.TestCase):
+    def test_backfill_of_old_files_cannot_regress_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = SensorDB(Path(tmp) / "t.sqlite")
+            db.initialize()
+            poller = Poller(db)
+            poller._store_metadata(ParseResult(Sample(2, {}), metadata={
+                "nodes": {"a": {"location": "New name"}}, "metrics": {}, "sampleTime": 2}))
+            # an older snapshot arrives later (backfill): must be ignored entirely
+            poller._store_metadata(ParseResult(Sample(1, {}), metadata={
+                "nodes": {"a": {"location": "Old name"}, "ghost": {}}, "metrics": {}, "sampleTime": 1}))
+            meta = db.get_meta(META_KEY)
+            self.assertEqual(meta["nodes"]["a"]["location"], "New name")
+            self.assertNotIn("ghost", meta["nodes"])
+            self.assertEqual(meta["sampleTime"], 2)
+
+
 class PollTests(unittest.TestCase):
     def _db(self, tmp):
         db = SensorDB(Path(tmp) / "t.sqlite")
