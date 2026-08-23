@@ -43,9 +43,12 @@ export function buildInsights(stats) {
   };
 
   for (const [id, st] of Object.entries(stats.nodes)) {
-    // availability: repeated dropouts are the whole point, they must be seen
-    if (st.gapCount >= 2) add(id, 1 + st.gapCount / 2, `unplugged or unreachable <b>${st.gapCount}×</b> this week, ${dur(st.downtimeMs)} down`, true);
-    else if (st.downtimeMs > 6 * H) add(id, 1.3, `offline <b>${dur(st.downtimeMs)}</b> in total this week`, true);
+    // availability: a dropout fact outranks the others only when the total downtime
+    // is serious (statsBigDowntimeH); the odd short outage stays low-key
+    const heavy = st.downtimeMs > CONFIG.statsBigDowntimeH * H;
+    const downScore = heavy ? 2 + st.downtimeMs / (10 * H) : 1.1;
+    if (st.gapCount >= 2) add(id, downScore, `unplugged or unreachable <b>${st.gapCount}×</b> this week, ${dur(st.downtimeMs)} down`, heavy);
+    else if (st.downtimeMs > 6 * H) add(id, downScore, `offline <b>${dur(st.downtimeMs)}</b> in total this week`, heavy);
     if (st.silentNow) add(id, 2 + (stats.toMs - st.lastMs) / (24 * H), `silent since ${when(st.lastMs)}`, true);
     if (st.firstMs - stats.fromMs > 6 * H) add(id, 1.5, `new here, first seen ${when(st.firstMs)}`);
 

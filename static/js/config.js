@@ -19,6 +19,7 @@ export const CONFIG = {
   statsRound: true,       // stats panel: first thing on page load, then after every full card pass
   statsDays: 7,           // statistics window (server /api/stats)
   statsIdleMin: 5,        // boards with no card rotation show a stats round this often instead
+  statsBigDowntimeH: 10,  // downtime facts outrank the others only past this many hours per week
   // Chart lines of the devices whose cards are showing are drawn on top with a thin
   // ground-coloured casing on each side. Nothing else changes.
   highlightWidth: 2,      // same as every other line
