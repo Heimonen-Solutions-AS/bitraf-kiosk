@@ -18,7 +18,7 @@ BANDS: Dict[str, Tuple[Tuple[float, float], Tuple[float, float]]] = {
     "co2":         ((0, 800), (0, 1000)),
     "humidity":    ((30, 60), (25, 70)),
     "voc":         ((0, 250), (0, 2000)),
-    "vocindex":    ((0, 150), (0, 250)),
+    "vocindex":    ((0, 250), (0, 400)),   # see sensors.js: calibrated against the ppb bands
     "nox":         ((0, 20),  (0, 100)),
     "pm25":        ((0, 10),  (0, 25)),
     "pm1":         ((0, 10),  (0, 25)),

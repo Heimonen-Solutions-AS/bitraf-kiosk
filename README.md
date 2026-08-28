@@ -64,6 +64,11 @@ against the vendored C in `tests/fixtures/sensirion/`) and stores the result as
 of stored rows at startup; `--reindex` (or a backfill) recomputes history in
 time order. The ppb series is still shown as its own VOC chart.
 
+The index bands (good up to 250, fair up to 400) are calibrated against the ppb
+bands: Sensirion's laboratory curve `ppb = (ln(501 - index) - 6.24) * -381.97`
+puts Airthings' 250 ppb boundary at index ~235, and their algorithm treats
+anything above 230 as a VOC event rather than background.
+
 ## Room names
 
 The kiosk names each card from the node's ietf-system `<location>` in the

@@ -8,8 +8,10 @@ export const SENSOR_TYPES = {
   voc:         { label: "VOC",         unit: "ppb",   decimals: 0, good: [0, 250], fair: [0, 2000], order: 3, advice: "ventilate" },
   // Sensirion gas index (native on the newer sensors, derived from ppb for the
   // Airthings units, see bitraf/gasindex.py): 100 = this room's usual air, 500 = worst;
-  // bands follow Sensirion's guidance (over 150 noticeably worse than usual, over 250 bad)
-  vocindex:    { label: "VOC index",   unit: "",      decimals: 0, good: [0, 150], fair: [0, 250],  order: 3.5, advice: "ventilate" },
+  // bands calibrated against ppb: Sensirion's index-to-ethanol curve puts Airthings' 250 ppb
+  // "fair" boundary at index ~235 and the algorithm itself treats > 230 as a VOC event, so
+  // good ends at 250; Atmotube/Blueair/AirGradient all call 350-400+ severe, so fair ends at 400
+  vocindex:    { label: "VOC index",   unit: "",      decimals: 0, good: [0, 250], fair: [0, 400],  order: 3.5, advice: "ventilate" },
   nox:         { label: "NOx index",   unit: "",      decimals: 0, good: [0, 20],  fair: [0, 100],  order: 4, advice: "ventilate" },
   pm25:        { label: "PM2.5",       unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 4, advice: "dust/smoke" },
   pm1:         { label: "PM1",         unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 5 },
