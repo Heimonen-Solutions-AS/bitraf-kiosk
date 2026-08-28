@@ -21,6 +21,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--interval", type=int, default=60, help="seconds between fetches")
     parser.add_argument("--backfill", action="store_true", help="fetch the whole archive on startup")
     parser.add_argument("--once", action="store_true", help="fetch once (or backfill) and exit")
+    parser.add_argument("--reindex", action="store_true",
+                        help="recompute the derived VOC index for every stored row, then continue")
     parser.add_argument("-v", "--verbose", action="store_true")
     return parser
 
@@ -33,6 +35,11 @@ def main(argv=None) -> int:
     db.initialize()
     poller = Poller(db=db, source_url=args.source, interval_seconds=args.interval)
     log.info("database %s (%d rows)", args.db.resolve(), db.count())
+
+    if args.reindex:
+        lo, hi = db.time_bounds()
+        if lo is not None:
+            log.info("reindex: %d rows updated", poller.reindex(lo, hi))
 
     if args.backfill or args.once:
         try:

@@ -14,6 +14,7 @@ from urllib import error, request
 from urllib.parse import urljoin, urlparse
 
 from .db import META_KEY, SensorDB
+from .gasindex import PRIME_HOURS, VocIndexer, derived_meta, reindex
 from .parser import ParseResult, Sample, parse_xml
 
 log = logging.getLogger(__name__)
@@ -80,6 +81,9 @@ class Poller:
         self._thread: Optional[threading.Thread] = None
         self.last_error: Optional[str] = None
         self.last_backfill_errors: Dict[str, str] = {}
+        # derived VOC index (see gasindex.py): one running estimator per node,
+        # settled on the stored history before the first live sample is scored
+        self.indexer: Optional[VocIndexer] = None
 
     # -- lifecycle ---------------------------------------------------------
     def start(self) -> None:
@@ -184,6 +188,31 @@ class Poller:
     def parse_latest(self) -> ParseResult:
         return self.parse_url(self.discover_latest_url())
 
+    # -- derived metrics -----------------------------------------------------
+    def _metrics_meta(self) -> dict:
+        return dict((self.db.get_meta(META_KEY) or {}).get("metrics") or {})
+
+    def _ensure_indexer(self) -> VocIndexer:
+        if self.indexer is None:
+            indexer = VocIndexer()
+            indexer.prime(self.db, int(time.time() * 1000), self._metrics_meta())
+            self.indexer = indexer
+        return self.indexer
+
+    def _add_derived(self, parsed: ParseResult) -> None:
+        """Score the sample's ppb VOC readings and register the derived metric's metadata."""
+        added = self._ensure_indexer().apply(parsed.sample.time_ms, parsed.sample.metrics,
+                                             parsed.metadata.get("metrics"))
+        metrics_meta = parsed.metadata.setdefault("metrics", {})
+        for key in added:
+            metrics_meta[key] = derived_meta(key[:key.find(".")])
+
+    def reindex(self, from_ms: int, to_ms: int) -> int:
+        """Recompute the derived metrics for stored rows and re-prime the live estimator."""
+        changed = reindex(self.db, from_ms, to_ms, self._metrics_meta())
+        self.indexer = None
+        return changed
+
     def _store_metadata(self, parsed: ParseResult) -> None:
         """Merge the newest snapshot's metadata over what we already know.
 
@@ -230,6 +259,8 @@ class Poller:
                     errors.append(f"{url}: {exc}")
             if not results:
                 raise RuntimeError("; ".join(errors))
+            for parsed in sorted(results, key=lambda r: r.sample.time_ms):
+                self._add_derived(parsed)
             new = self.db.insert_samples([r.sample for r in results])
             rows_new = len(new)
             self._store_metadata(results[0])
@@ -282,6 +313,7 @@ class Poller:
         if newest is not None:
             self._store_metadata(newest)
         if inserted:
+            self.reindex(inserted[0].time_ms, inserted[-1].time_ms)
             self.events.publish({"type": "reload"})
         self.last_backfill_errors = failures
         message = f"{len(failures)} files failed after {attempts} attempts" if failures else "all files parsed"

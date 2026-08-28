@@ -76,7 +76,7 @@ export class Store {
     for (const key of keys) {
       const dot = key.indexOf(".");
       const nodeId = key.slice(0, dot), sensor = key.slice(dot + 1);
-      const type = sensorType(sensor);
+      const type = sensorType(sensor, (this.meta.metrics || {})[key]?.unitsDisplay);
       const values = [];
       for (const t of times) {
         if (t < cutoff) continue;

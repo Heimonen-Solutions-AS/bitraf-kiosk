@@ -5,12 +5,19 @@ export const SENSOR_TYPES = {
   temperature: { label: "Temperature", unit: "°C",    decimals: 1, good: [18, 25], fair: [15, 28],  hero: true, order: 0 },
   co2:         { label: "CO₂",         unit: "ppm",   decimals: 0, good: [0, 800], fair: [0, 1000], order: 1, advice: "ventilate" },
   humidity:    { label: "Humidity",    unit: "%",     decimals: 0, good: [30, 60], fair: [25, 70],  order: 2 },
-  voc:         { label: "VOC",         unit: "ppb",   decimals: 0, good: [0, 250], fair: [0, 2000], order: 3, advice: "ventilate" },
+  // VOC in ppb (Airthings) feeds the derived VOC index below and the flatulence
+  // index; it is kept in the data but not shown, so every VOC reading is on one scale
+  voc:         { label: "VOC",         unit: "ppb",   decimals: 0, good: [0, 250], fair: [0, 2000], order: 3, hidden: true },
+  // Sensirion gas index: 100 = this room's usual air, 500 = worst; bands are
+  // Sensirion's guidance (over 150 noticeably worse than usual, over 250 bad)
+  vocindex:    { label: "VOC index",   unit: "",      decimals: 0, good: [0, 150], fair: [0, 250],  order: 3, advice: "ventilate" },
+  nox:         { label: "NOx index",   unit: "",      decimals: 0, good: [0, 20],  fair: [0, 100],  order: 4, advice: "ventilate" },
   pm25:        { label: "PM2.5",       unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 4, advice: "dust/smoke" },
   pm1:         { label: "PM1",         unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 5 },
   pm10:        { label: "PM10",        unit: "µg/m³", decimals: 0, good: [0, 20],  fair: [0, 50],   order: 6 },
   radon:       { label: "Radon",       unit: "Bq/m³", decimals: 0, good: [0, 100], fair: [0, 150],  order: 7, advice: "short-term avg" },
   pressure:    { label: "Pressure",    unit: "hPa",   decimals: 0, order: 8 },
+  illuminance: { label: "Light",       unit: "lx",    decimals: 0, order: 11 },
   // derived (see derived.js): excess VOC × occupancy, in ppm
   flatulence:  { label: "Flatulence",  unit: "ppm",   decimals: 2, good: [0, 0.05], fair: [0, 0.2], order: 9, advice: "open a window" },
   // device-reported overall rating (e.g. IKEA Alpstuga's AirQualityEnum,
@@ -22,9 +29,14 @@ export const SENSOR_TYPES = {
 export const STATUS_WORD = { ok: "Good", fair: "Fair", poor: "Poor", none: "" };
 export const STATUS_RANK = { none: 0, ok: 1, fair: 2, poor: 3 };
 
-/** Sensor name from data.xml → key in SENSOR_TYPES (or the name itself). */
-export function sensorType(sensorName) {
+/** Sensor name from data.xml → key in SENSOR_TYPES (or the name itself).
+ *  `unitsDisplay` (from the server metadata) settles a `voc` sensor that already reports an index. */
+export function sensorType(sensorName, unitsDisplay = "") {
   const n = sensorName.toLowerCase();
+  const compact = n.replace(/[-_ ]/g, "");
+  if (compact === "vocindex" || (n === "voc" && /index/i.test(unitsDisplay || ""))) return "vocindex";
+  if (compact === "nox" || compact === "noxindex") return "nox";
+  if (compact === "light" || compact === "illuminance" || compact === "lux" || compact === "ambientlight" || compact === "brightness") return "illuminance";
   if (n.startsWith("radon")) return "radon";
   if (n.startsWith("temp") || /^th\d*$/.test(n)) return "temperature";
   if (n === "pm25" || n === "pm2.5" || n === "pm2_5") return "pm25";

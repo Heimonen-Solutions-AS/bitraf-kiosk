@@ -56,6 +56,8 @@ def main() -> int:
             if newest is None or r.sample.time_ms > newest.sample.time_ms:
                 newest = r
     inserted = db.insert_samples(samples)
+    if inserted:
+        poller.reindex(inserted[0].time_ms, inserted[-1].time_ms)
     if newest:
         poller._store_metadata(newest)  # noqa: SLF001
     log.info("inserted %d rows (%d failed); database now has %d rows", len(inserted), failed, db.count())

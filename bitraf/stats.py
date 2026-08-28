@@ -10,7 +10,7 @@ import statistics
 import time
 from typing import Dict, List, Optional, Tuple
 
-from .db import SensorDB
+from .db import META_KEY, SensorDB
 
 # type: ((good_lo, good_hi), (fair_lo, fair_hi)) — outside fair is "poor"
 BANDS: Dict[str, Tuple[Tuple[float, float], Tuple[float, float]]] = {
@@ -18,6 +18,8 @@ BANDS: Dict[str, Tuple[Tuple[float, float], Tuple[float, float]]] = {
     "co2":         ((0, 800), (0, 1000)),
     "humidity":    ((30, 60), (25, 70)),
     "voc":         ((0, 250), (0, 2000)),
+    "vocindex":    ((0, 150), (0, 250)),
+    "nox":         ((0, 20),  (0, 100)),
     "pm25":        ((0, 10),  (0, 25)),
     "pm1":         ((0, 10),  (0, 25)),
     "pm10":        ((0, 20),  (0, 50)),
@@ -28,9 +30,16 @@ GAP_CADENCE_FACTOR = 3        # ... or below this multiple of the node's own cad
 DAY_MS = 24 * 3600_000
 
 
-def sensor_type(name: str) -> str:
+def sensor_type(name: str, units_display: str = "") -> str:
     """Mirror of sensorType() in static/js/sensors.js."""
     n = name.lower()
+    compact = re.sub(r"[-_ ]", "", n)
+    if compact == "vocindex" or (n == "voc" and "index" in (units_display or "").lower()):
+        return "vocindex"
+    if compact in ("nox", "noxindex"):
+        return "nox"
+    if compact in ("light", "illuminance", "lux", "ambientlight", "brightness"):
+        return "illuminance"
     if n.startswith("radon"):
         return "radon"
     if n.startswith("temp") or re.fullmatch(r"th\d*", n):
@@ -89,6 +98,7 @@ def weekly_stats(db: SensorDB, days: int = 7, now_ms: Optional[int] = None) -> d
     from_ms = now_ms - days * DAY_MS
     day_ago = now_ms - DAY_MS
 
+    metrics_meta = (db.get_meta(META_KEY) or {}).get("metrics") or {}
     times: Dict[str, List[int]] = {}
     types: Dict[str, Dict[str, _TypeAcc]] = {}
     for t, metrics in db.iter_rows(from_ms, now_ms):
@@ -101,7 +111,7 @@ def weekly_stats(db: SensorDB, days: int = 7, now_ms: Optional[int] = None) -> d
             if node not in seen_nodes:
                 seen_nodes.add(node)
                 times.setdefault(node, []).append(t)
-            type_ = sensor_type(sensor)
+            type_ = sensor_type(sensor, (metrics_meta.get(key) or {}).get("unitsDisplay", ""))
             acc = types.setdefault(node, {}).setdefault(type_, _TypeAcc())
             acc.n += 1; acc.total += value
             if acc.vmin is None or value < acc.vmin:

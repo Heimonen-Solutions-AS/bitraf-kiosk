@@ -85,6 +85,15 @@ class SensorDB:
                     inserted.append(sample)
         return inserted
 
+    def update_metrics(self, rows: Iterable[Tuple[int, Dict[str, float]]]) -> int:
+        """Rewrite the metrics of existing rows (derived-metric recomputes). Returns rows touched."""
+        n = 0
+        with self._connect() as db:
+            for time_ms, metrics in rows:
+                n += db.execute("UPDATE samples SET metrics_json = ? WHERE time_ms = ?",
+                                (_dumps(metrics), int(time_ms))).rowcount
+        return n
+
     def log_fetch(self, status: str, rows_found: int, rows_new: int, duration_ms: int,
                   message: Optional[str] = None) -> None:
         with self._connect() as db:

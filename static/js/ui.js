@@ -110,7 +110,7 @@ export class Banner {
     let worst = "ok";
     for (const node of nodes.values()) {
       for (const s of node.sensors.values()) {
-        if (s.status !== "poor" && s.status !== "fair") continue;
+        if (s.info.hidden || (s.status !== "poor" && s.status !== "fair")) continue;
         if (STATUS_RANK[s.status] > STATUS_RANK[worst]) worst = s.status;
         const advice = s.status === "poor" && s.info.advice ? ` · ${s.info.advice}` : "";
         const value = valueWord(s.info, s.last[1]) ?? `${fmtNum(s.last[1], s.info.decimals)} ${s.info.unit}`;
@@ -232,7 +232,7 @@ export class Rooms {
       setHtml(card.name, `${escapeHtml(room)}${suffix ? `<small> · ${escapeHtml(suffix)}</small>` : ""}`);
       setHtml(card.tags, deviceTags(node, meta, nowMs).map((t) => `<span class="tag ${t.cls || ""}">${escapeHtml(t.text)}</span>`).join(""));
 
-      const sensors = [...node.sensors.values()].sort((a, b) => a.info.order - b.info.order);
+      const sensors = [...node.sensors.values()].filter((s) => !s.info.hidden).sort((a, b) => a.info.order - b.info.order);
       const hero = sensors.find((s) => s.info.hero);
       const rest = sensors.filter((s) => s !== hero);
       // hero
@@ -402,7 +402,7 @@ export class Charts {
     const lit = this.active ? new Set(this.active) : null;
     const byType = new Map();
     for (const node of nodes.values()) for (const s of node.sensors.values()) {
-      if (s.info.noChart) continue; // rating enums live on the cards, not in the grid
+      if (s.info.noChart || s.info.hidden) continue; // rating enums live on the cards, raw VOC ppb feeds the index
       if (!byType.has(s.type)) byType.set(s.type, []);
       byType.get(s.type).push({ node, s });
     }

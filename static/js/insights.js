@@ -54,7 +54,7 @@ export function buildInsights(stats) {
 
     for (const [type, t] of Object.entries(st.types || {})) {
       const info = SENSOR_TYPES[type];
-      if (!t.pct || !info) continue;
+      if (!t.pct || !info || info.hidden) continue;
       const poor = t.pct.poor || 0, fair = t.pct.fair || 0;
       if (type === "airquality") {
         if (fair + poor > 0.25) add(id, 1 + poor * 6 + fair * 2, `air rated below "Good" <b>${pc(fair + poor)}</b> of the week`);

@@ -12,6 +12,7 @@ python bitraf_kiosk.py                 # serve on http://0.0.0.0:8006/, poll eve
 python bitraf_kiosk.py --backfill      # first fetch the whole archive (~27k files, a few minutes)
 python bitraf_kiosk.py --source https://lightside-instruments.com/bitraf/data/   # elsewhere than the Pi: use the public mirror
 python tools/seed_recent.py --hours 26 # quick alternative: last 26 h, every 5th minute
+python bitraf_kiosk.py --reindex       # recompute the derived VOC index over the stored history, then serve
 python -m unittest discover -s tests   # run the tests
 python tools/build_preview.py          # single-file HTML with a frozen snapshot (for sharing)
 ```
@@ -51,6 +52,17 @@ tools/             seed_recent.py, build_preview.py
 | `GET /api/events` | SSE stream: `hello`, `samples` (new rows + metadata), `reload` |
 | `GET /api/export.csv` | whole database as CSV |
 | `POST /api/poll`, `POST /api/backfill` | trigger a fetch / a full backfill |
+
+## Derived VOC index
+
+Newer sensors report a Sensirion VOC index (1..500, 100 = the room's usual air)
+while the Airthings units report VOC in ppb. So that every VOC reading sits on
+one chart, the poller runs each ppb series through the same algorithm
+(`bitraf/gasindex.py`, a port of Sensirion's reference implementation, diffed
+against the vendored C in `tests/fixtures/sensirion/`) and stores the result as
+`<node>.voc-index` next to the raw ppb. The estimator is primed on the last 48 h
+of stored rows at startup; `--reindex` (or a backfill) recomputes history in
+time order. The ppb series stays in the data and the API but is not shown.
 
 ## Room names
 
