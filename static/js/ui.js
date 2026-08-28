@@ -402,7 +402,7 @@ export class Charts {
     const lit = this.active ? new Set(this.active) : null;
     const byType = new Map();
     for (const node of nodes.values()) for (const s of node.sensors.values()) {
-      if (s.info.noChart || s.info.hidden) continue; // rating enums live on the cards, raw VOC ppb feeds the index
+      if (s.info.noChart || s.info.hidden) continue; // rating enums live on the cards, not in the grid
       if (!byType.has(s.type)) byType.set(s.type, []);
       byType.get(s.type).push({ node, s });
     }

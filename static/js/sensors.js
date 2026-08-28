@@ -5,12 +5,11 @@ export const SENSOR_TYPES = {
   temperature: { label: "Temperature", unit: "°C",    decimals: 1, good: [18, 25], fair: [15, 28],  hero: true, order: 0 },
   co2:         { label: "CO₂",         unit: "ppm",   decimals: 0, good: [0, 800], fair: [0, 1000], order: 1, advice: "ventilate" },
   humidity:    { label: "Humidity",    unit: "%",     decimals: 0, good: [30, 60], fair: [25, 70],  order: 2 },
-  // VOC in ppb (Airthings) feeds the derived VOC index below and the flatulence
-  // index; it is kept in the data but not shown, so every VOC reading is on one scale
-  voc:         { label: "VOC",         unit: "ppb",   decimals: 0, good: [0, 250], fair: [0, 2000], order: 3, hidden: true },
-  // Sensirion gas index: 100 = this room's usual air, 500 = worst; bands are
-  // Sensirion's guidance (over 150 noticeably worse than usual, over 250 bad)
-  vocindex:    { label: "VOC index",   unit: "",      decimals: 0, good: [0, 150], fair: [0, 250],  order: 3, advice: "ventilate" },
+  voc:         { label: "VOC",         unit: "ppb",   decimals: 0, good: [0, 250], fair: [0, 2000], order: 3, advice: "ventilate" },
+  // Sensirion gas index (native on the newer sensors, derived from ppb for the
+  // Airthings units, see bitraf/gasindex.py): 100 = this room's usual air, 500 = worst;
+  // bands follow Sensirion's guidance (over 150 noticeably worse than usual, over 250 bad)
+  vocindex:    { label: "VOC index",   unit: "",      decimals: 0, good: [0, 150], fair: [0, 250],  order: 3.5, advice: "ventilate" },
   nox:         { label: "NOx index",   unit: "",      decimals: 0, good: [0, 20],  fair: [0, 100],  order: 4, advice: "ventilate" },
   pm25:        { label: "PM2.5",       unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 4, advice: "dust/smoke" },
   pm1:         { label: "PM1",         unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 5 },

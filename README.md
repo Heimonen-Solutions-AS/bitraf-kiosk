@@ -62,7 +62,7 @@ one chart, the poller runs each ppb series through the same algorithm
 against the vendored C in `tests/fixtures/sensirion/`) and stores the result as
 `<node>.voc-index` next to the raw ppb. The estimator is primed on the last 48 h
 of stored rows at startup; `--reindex` (or a backfill) recomputes history in
-time order. The ppb series stays in the data and the API but is not shown.
+time order. The ppb series is still shown as its own VOC chart.
 
 ## Room names
 
