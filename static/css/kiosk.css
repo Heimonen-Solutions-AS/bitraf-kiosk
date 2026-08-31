@@ -43,7 +43,7 @@ body { -webkit-font-smoothing: antialiased; }
 
 .kiosk {
   height: 100vh; width: 100vw; padding: var(--inset-y) var(--inset-x);
-  display: grid; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto; gap: 1.1rem;
+  display: grid; grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto; gap: 1.1rem;
 }
 
 /* ---------- header ---------- */
@@ -76,6 +76,24 @@ body { -webkit-font-smoothing: antialiased; }
 .banner.poor  { border-color: var(--critical); } .banner.poor .lead::before  { background: var(--critical); }
 .banner.stale { border-color: var(--stale); }    .banner.stale .lead::before { background: var(--stale); }
 .banner.error { border-color: var(--critical); background: #1a1a19; color: var(--snow); }
+
+/* ---------- air quality ribbon: 24 hour groups × 6 ten-minute segments ---------- */
+.ribbon { min-width: 0; }
+.rb-bar { position: relative; display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 3px; }
+.rb-hour { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; }
+.rb-seg { display: block; height: 1.25rem; border-radius: 1px; background: var(--hair-soft); }
+.rb-seg.ok    { background: var(--good); }
+.rb-seg.fair  { background: var(--warning); }
+.rb-seg.poor  { background: var(--critical); }
+/* hour labels hover on the bar itself: an absolute overlay sharing the same
+   24-column grid, each label centered inside its hour block */
+.rb-ticks { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, minmax(0, 1fr));
+            grid-template-rows: 100%; gap: 3px; pointer-events: none; }
+/* each label is SVG text: a round-join stroke drawn behind the fill gives a
+   sharp black outline hugging the glyphs, and SVG centers it geometrically */
+.rb-tick { width: 100%; height: 100%; overflow: visible; }
+.rb-tick text { text-anchor: middle; dominant-baseline: central; font: 700 0.8rem var(--mono);
+                fill: var(--snow); stroke: #000; stroke-width: 0.28em; stroke-linejoin: round; paint-order: stroke; }
 
 /* ---------- room cards ---------- */
 .rooms { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1rem; transition: opacity 0.7s ease; }

@@ -4,7 +4,7 @@ import { CONFIG } from "./config.js";
 import { buildInsights, pickFact } from "./insights.js";
 import { LineChart } from "./chart.js";
 import { $, el, escapeHtml, fmtDate, fmtNum, fmtTime, setClass, setHtml, setText } from "./format.js";
-import { STATUS_RANK, STATUS_WORD, valueWord } from "./sensors.js";
+import { STATUS_RANK, STATUS_WORD, statusOf, valueWord } from "./sensors.js";
 
 export function roomName(nodeId, meta) {
   const m = (meta.nodes || {})[nodeId] || {};
@@ -133,6 +133,49 @@ export class Banner {
   }
 
   error(message) { setClass(this.el, "banner error"); setText(this.lead, message); setHtml(this.items, ""); }
+}
+
+/**
+ * Air quality ribbon: 24 hour groups of 6 segments, one segment per 10 minutes.
+ * A segment takes the worst pollutant band (bucket average, any device) in its
+ * interval; comfort readings (temperature, humidity) and light stay out of it.
+ * The bar is device-count independent: always 144 segments, however many report.
+ */
+const RIBBON_TYPES = new Set(["co2", "voc", "vocindex", "nox", "pm1", "pm25", "pm10", "radon", "airquality"]);
+const RIBBON_HOURS = 24, SEGS_PER_HOUR = 6;
+
+export class Ribbon {
+  constructor() {
+    this.host = $("#ribbon");
+    const hour = `<div class="rb-hour">${'<i class="rb-seg"></i>'.repeat(SEGS_PER_HOUR)}</div>`;
+    const ticks = [];
+    const tick = (col, text) => `<svg class="rb-tick" style="grid-column:${col}"><text x="50%" y="50%">${text}</text></svg>`;
+    for (let h = 0; h < RIBBON_HOURS; h += 3) ticks.push(tick(h + 1, `-${RIBBON_HOURS - h} h`));
+    ticks.push(tick(RIBBON_HOURS, "now"));
+    this.host.innerHTML = `<div class="rb-bar">${hour.repeat(RIBBON_HOURS)}<div class="rb-ticks">${ticks.join("")}</div></div>`;
+    this.segs = [...this.host.querySelectorAll(".rb-seg")];
+  }
+
+  update(nodes, nowMs) {
+    const n = this.segs.length, bucketMs = 3600_000 / SEGS_PER_HOUR;
+    const start = nowMs - n * bucketMs;
+    const worst = new Int8Array(n); // 0 = no data, else STATUS_RANK of the worst band
+    const sum = new Float64Array(n), cnt = new Int32Array(n);
+    for (const node of nodes.values()) for (const s of node.sensors.values()) {
+      if (!RIBBON_TYPES.has(s.type)) continue;
+      sum.fill(0); cnt.fill(0);
+      for (const [t, v] of s.values) {
+        const i = Math.floor((t - start) / bucketMs);
+        if (i >= 0 && i < n) { sum[i] += v; cnt[i]++; }
+      }
+      for (let i = 0; i < n; i++) if (cnt[i]) {
+        const rank = STATUS_RANK[statusOf(s.type, sum[i] / cnt[i])];
+        if (rank > worst[i]) worst[i] = rank;
+      }
+    }
+    const cls = ["empty", "ok", "fair", "poor"]; // rank "none" renders like no data
+    this.segs.forEach((seg, i) => setClass(seg, `rb-seg ${cls[worst[i]]}`));
+  }
 }
 
 export class Rooms {

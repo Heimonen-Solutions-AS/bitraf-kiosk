@@ -4,7 +4,7 @@ import { CONFIG } from "./config.js";
 import { LiveSource, SnapshotSource } from "./api.js";
 import { $ } from "./format.js";
 import { Store } from "./model.js";
-import { Banner, Charts, Footer, Header, Legend, Rooms, StatsBoard } from "./ui.js";
+import { Banner, Charts, Footer, Header, Legend, Ribbon, Rooms, StatsBoard } from "./ui.js";
 
 // Per-screen safe-area override: ?inset=4 (percent, both axes) or ?insetX=2&insetY=5.
 {
@@ -17,6 +17,7 @@ import { Banner, Charts, Footer, Header, Legend, Rooms, StatsBoard } from "./ui.
 const store = new Store();
 const header = new Header();
 const banner = new Banner();
+const ribbon = new Ribbon();
 const rooms = new Rooms();
 const statsBoard = new StatsBoard();
 rooms.altEl = statsBoard.host;
@@ -48,8 +49,11 @@ function render() {
   }
   const gapMs = Math.max(store.bucketMs * 3.5, 6 * 60_000); // break lines across missing minutes
   banner.update(nodes, store.meta, store.latestMs, nowMs);
-  rooms.update(nodes, store.meta, nowMs);
+  ribbon.update(nodes, nowMs);
+  // the stats board first: it must know the nodes before rooms.update can begin
+  // a stats round (newRound renders synchronously from the board's last nodes)
   statsBoard.update(nodes, store.meta);
+  rooms.update(nodes, store.meta, nowMs);
   legend.update(nodes, store.meta);
   charts.update(nodes, store.meta, nowMs - CONFIG.windowHours * 3600_000, nowMs, gapMs);
   footer.setRange(store, store.latestMs);
