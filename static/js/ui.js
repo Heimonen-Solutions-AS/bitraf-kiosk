@@ -137,11 +137,11 @@ export class Banner {
 
 /**
  * Air quality ribbon: 24 hour groups of 6 segments, one segment per 10 minutes.
- * A segment takes the worst pollutant band (bucket average, any device) in its
- * interval; comfort readings (temperature, humidity) and light stay out of it.
+ * A segment takes the worst band of any single reading (any sensor, any device)
+ * in its interval, the same rule the alert banner applies to the latest reading,
+ * so the ribbon and the banner always agree. Types without bands never colour it.
  * The bar is device-count independent: always 144 segments, however many report.
  */
-const RIBBON_TYPES = new Set(["co2", "voc", "vocindex", "nox", "pm1", "pm25", "pm10", "radon", "airquality"]);
 const RIBBON_HOURS = 24, SEGS_PER_HOUR = 6;
 
 export class Ribbon {
@@ -160,16 +160,12 @@ export class Ribbon {
     const n = this.segs.length, bucketMs = 3600_000 / SEGS_PER_HOUR;
     const start = nowMs - n * bucketMs;
     const worst = new Int8Array(n); // 0 = no data, else STATUS_RANK of the worst band
-    const sum = new Float64Array(n), cnt = new Int32Array(n);
     for (const node of nodes.values()) for (const s of node.sensors.values()) {
-      if (!RIBBON_TYPES.has(s.type)) continue;
-      sum.fill(0); cnt.fill(0);
+      if (s.info.hidden) continue;
       for (const [t, v] of s.values) {
         const i = Math.floor((t - start) / bucketMs);
-        if (i >= 0 && i < n) { sum[i] += v; cnt[i]++; }
-      }
-      for (let i = 0; i < n; i++) if (cnt[i]) {
-        const rank = STATUS_RANK[statusOf(s.type, sum[i] / cnt[i])];
+        if (i < 0 || i >= n) continue;
+        const rank = STATUS_RANK[statusOf(s.type, v)];
         if (rank > worst[i]) worst[i] = rank;
       }
     }
