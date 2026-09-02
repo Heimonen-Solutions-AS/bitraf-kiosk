@@ -2,6 +2,7 @@
 // sample; the time axis rolls forward on a timer even when nothing new arrives.
 import { CONFIG } from "./config.js";
 import { LiveSource, SnapshotSource } from "./api.js";
+import { addDerivedMetrics } from "./derived.js";
 import { $ } from "./format.js";
 import { Store } from "./model.js";
 import { Banner, Charts, Footer, Header, Legend, Ribbon, Rooms, StatsBoard } from "./ui.js";
@@ -43,6 +44,7 @@ function render() {
   const nowMs = now();
   store.prune(nowMs);
   const nodes = store.model(nowMs);
+  addDerivedMetrics(nodes, store.meta);
   // a node quiet for longer than the chart window keeps its "last seen" from the weekly stats
   if (stats) for (const node of nodes.values()) {
     if (node.lastSeen == null && stats.nodes[node.id]) node.lastSeen = stats.nodes[node.id].lastMs;

@@ -11,13 +11,16 @@ export const SENSOR_TYPES = {
   // bands calibrated against ppb: Sensirion's index-to-ethanol curve puts Airthings' 250 ppb
   // "fair" boundary at index ~235 and the algorithm itself treats > 230 as a VOC event, so
   // good ends at 250; Atmotube/Blueair/AirGradient all call 350-400+ severe, so fair ends at 400
-  vocindex:    { label: "VOC index",   unit: "",      decimals: 0, good: [0, 250], fair: [0, 400],  order: 3.5, advice: "ventilate" },
+  vocindex:    { label: "VOC index",   unit: "",      decimals: 0, good: [0, 250], fair: [0, 400],  order: 3.5, advice: "ventilate", noChart: true },
   nox:         { label: "NOx index",   unit: "",      decimals: 0, good: [0, 20],  fair: [0, 100],  order: 4, advice: "ventilate" },
   pm25:        { label: "PM2.5",       unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 4, advice: "dust/smoke" },
   pm1:         { label: "PM1",         unit: "µg/m³", decimals: 0, good: [0, 10],  fair: [0, 25],   order: 5 },
   pm10:        { label: "PM10",        unit: "µg/m³", decimals: 0, good: [0, 20],  fair: [0, 50],   order: 6 },
   radon:       { label: "Radon",       unit: "Bq/m³", decimals: 0, good: [0, 100], fair: [0, 150],  order: 7, advice: "short-term avg" },
   pressure:    { label: "Pressure",    unit: "hPa",   decimals: 0, order: 8 },
+  // derived (see derived.js): excess VOC × occupancy, in ppm; last so the chart
+  // sits in the bottom right corner of the grid
+  flatulence:  { label: "Flatulence",  unit: "ppm",   decimals: 2, good: [0, 0.05], fair: [0, 0.2], order: 12, advice: "open a window" },
   illuminance: { label: "Light",       unit: "lx",    decimals: 0, order: 11 },
   // device-reported overall rating (e.g. IKEA Alpstuga's AirQualityEnum,
   // 0=unknown 1=good … 6=extremely poor): shown as a word on the card, never charted
@@ -34,6 +37,7 @@ export function sensorType(sensorName, unitsDisplay = "") {
   const n = sensorName.toLowerCase();
   const compact = n.replace(/[-_ ]/g, "");
   if (compact === "vocindex" || (n === "voc" && /index/i.test(unitsDisplay || ""))) return "vocindex";
+  if (compact === "vocest") return "voc"; // ppb estimated from the index, see bitraf/vocppb.py
   if (compact === "nox" || compact === "noxindex") return "nox";
   if (compact === "light" || compact === "illuminance" || compact === "lux" || compact === "ambientlight" || compact === "brightness") return "illuminance";
   if (n.startsWith("radon")) return "radon";

@@ -31,6 +31,8 @@ export const CONFIG = {
   locale: "en-GB",
   eyebrow: "Bitraf · Indoor climate · Oslo, Norway",
   headline: "Air quality now",
+  // Node ids or locations that skip the derived flatulence metric.
+  flatulenceExclude: ["Room 217"],
   // Room names for nodes whose metadata lacks an ietf-system <location>. Key = node-id.
   rooms: {
     // "airthings0-ietf-hardware": "Electronics lab",

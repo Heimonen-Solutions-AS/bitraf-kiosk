@@ -88,9 +88,13 @@ export class Store {
       let prev = null; // value ~1 h before the latest, for the trend arrow
       for (const p of values) { if (p[0] <= last[0] - 3600_000) prev = p; else break; }
       const node = nodes.get(nodeId);
+      let info = typeInfo(type, key, this.meta);
+      // ppb estimated from the index (bitraf/vocppb.py): charted with the real
+      // VOC series, but labeled honestly wherever this device's row shows up
+      if (sensor === "voc-est") info = { ...info, label: "VOC estimate" };
       node.sensors.set(type, {
         key, type, sensor, values, last, prev,
-        info: typeInfo(type, key, this.meta), status: statusOf(type, last[1]),
+        info, status: statusOf(type, last[1]),
       });
       // A device can die while the gateway keeps republishing its last value, so
       // prefer the sensor's own value-timestamp (Airthings) over the archive row time.
