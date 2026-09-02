@@ -14,6 +14,7 @@ from urllib import error, request
 from urllib.parse import urljoin, urlparse
 
 from .db import META_KEY, SensorDB
+from . import vocppb
 from .gasindex import PRIME_HOURS, VocIndexer, derived_meta, reindex
 from .parser import ParseResult, Sample, parse_xml
 
@@ -84,6 +85,8 @@ class Poller:
         # derived VOC index (see gasindex.py): one running estimator per node,
         # settled on the stored history before the first live sample is scored
         self.indexer: Optional[VocIndexer] = None
+        # derived VOC ppb estimate (see vocppb.py) for the index-only sensors
+        self.estimator: Optional[vocppb.PpbEstimator] = None
 
     # -- lifecycle ---------------------------------------------------------
     def start(self) -> None:
@@ -199,18 +202,31 @@ class Poller:
             self.indexer = indexer
         return self.indexer
 
+    def _ensure_estimator(self) -> vocppb.PpbEstimator:
+        if self.estimator is None:
+            estimator = vocppb.PpbEstimator()
+            estimator.prime(self.db, int(time.time() * 1000), self._metrics_meta())
+            self.estimator = estimator
+        return self.estimator
+
     def _add_derived(self, parsed: ParseResult) -> None:
         """Score the sample's ppb VOC readings and register the derived metric's metadata."""
+        metrics_meta = parsed.metadata.setdefault("metrics", {})
         added = self._ensure_indexer().apply(parsed.sample.time_ms, parsed.sample.metrics,
                                              parsed.metadata.get("metrics"))
-        metrics_meta = parsed.metadata.setdefault("metrics", {})
         for key in added:
             metrics_meta[key] = derived_meta(key[:key.find(".")])
+        added = self._ensure_estimator().apply(parsed.sample.time_ms, parsed.sample.metrics,
+                                               parsed.metadata.get("metrics"))
+        for key in added:
+            metrics_meta[key] = vocppb.derived_meta(key[:key.find(".")])
 
     def reindex(self, from_ms: int, to_ms: int) -> int:
-        """Recompute the derived metrics for stored rows and re-prime the live estimator."""
+        """Recompute the derived metrics for stored rows and re-prime the live estimators."""
         changed = reindex(self.db, from_ms, to_ms, self._metrics_meta())
+        changed += vocppb.reestimate(self.db, from_ms, to_ms, self._metrics_meta())
         self.indexer = None
+        self.estimator = None
         return changed
 
     def _store_metadata(self, parsed: ParseResult) -> None:
