@@ -19,8 +19,9 @@ export const SENSOR_TYPES = {
   radon:       { label: "Radon",       unit: "Bq/m³", decimals: 0, good: [0, 100], fair: [0, 150],  order: 7, advice: "short-term avg" },
   pressure:    { label: "Pressure",    unit: "hPa",   decimals: 0, order: 8 },
   // derived (see derived.js): excess VOC × occupancy, in ppm; last so the chart
-  // sits in the bottom right corner of the grid
-  flatulence:  { label: "Flatulence",  unit: "ppm",   decimals: 2, good: [0, 0.05], fair: [0, 0.2], order: 12, advice: "open a window" },
+  // sits in the bottom right corner of the grid. chartOnly: the joke gets no
+  // card rows and never alerts (its VOC input already alerts for real)
+  flatulence:  { label: "Flatulence",  unit: "ppm",   decimals: 2, good: [0, 0.05], fair: [0, 0.2], order: 12, chartOnly: true },
   illuminance: { label: "Light",       unit: "lx",    decimals: 0, order: 11 },
   // device-reported overall rating (e.g. IKEA Alpstuga's AirQualityEnum,
   // 0=unknown 1=good … 6=extremely poor): shown as a word on the card, never charted

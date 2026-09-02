@@ -110,7 +110,7 @@ export class Banner {
     let worst = "ok";
     for (const node of nodes.values()) {
       for (const s of node.sensors.values()) {
-        if (s.info.hidden || (s.status !== "poor" && s.status !== "fair")) continue;
+        if (s.info.hidden || s.info.chartOnly || (s.status !== "poor" && s.status !== "fair")) continue;
         if (STATUS_RANK[s.status] > STATUS_RANK[worst]) worst = s.status;
         const advice = s.status === "poor" && s.info.advice ? ` · ${s.info.advice}` : "";
         const value = valueWord(s.info, s.last[1]) ?? `${fmtNum(s.last[1], s.info.decimals)} ${s.info.unit}`;
@@ -161,7 +161,7 @@ export class Ribbon {
     const start = nowMs - n * bucketMs;
     const worst = new Int8Array(n); // 0 = no data, else STATUS_RANK of the worst band
     for (const node of nodes.values()) for (const s of node.sensors.values()) {
-      if (s.info.hidden) continue;
+      if (s.info.hidden || s.info.chartOnly) continue;
       for (const [t, v] of s.values) {
         const i = Math.floor((t - start) / bucketMs);
         if (i < 0 || i >= n) continue;
@@ -271,7 +271,7 @@ export class Rooms {
       setHtml(card.name, `${escapeHtml(room)}${suffix ? `<small> · ${escapeHtml(suffix)}</small>` : ""}`);
       setHtml(card.tags, deviceTags(node, meta, nowMs).map((t) => `<span class="tag ${t.cls || ""}">${escapeHtml(t.text)}</span>`).join(""));
 
-      const sensors = [...node.sensors.values()].filter((s) => !s.info.hidden).sort((a, b) => a.info.order - b.info.order);
+      const sensors = [...node.sensors.values()].filter((s) => !s.info.hidden && !s.info.chartOnly).sort((a, b) => a.info.order - b.info.order);
       const hero = sensors.find((s) => s.info.hero);
       const rest = sensors.filter((s) => s !== hero);
       // hero
